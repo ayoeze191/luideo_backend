@@ -1,0 +1,1208 @@
+{
+  "categories": [
+    {
+      "slug": "coral",
+      "name": "Coral",
+      "blurb": "Natural coral branch, cast in gold and strung by hand.",
+      "photo": "coral-red-set"
+    },
+    {
+      "slug": "pearl",
+      "name": "Pearl",
+      "blurb": "Baroque and freshwater pearl, no two the same shape.",
+      "photo": "pearl-set"
+    },
+    {
+      "slug": "stones",
+      "name": "Stone & gold",
+      "blurb": "Emerald, amethyst and cabochon stones set in cast gold.",
+      "photo": "emerald-set"
+    },
+    {
+      "slug": "bridal",
+      "name": "Bridal sets",
+      "blurb": "The complete four-piece, made to your day.",
+      "photo": "blush-worn-portrait"
+    },
+    {
+      "slug": "earrings",
+      "name": "Earrings",
+      "blurb": "Statement drops and gold-set studs, sold on their own.",
+      "photo": "pearl-earrings"
+    },
+    {
+      "slug": "wrist",
+      "name": "Bracelets & rings",
+      "blurb": "Cuffs, wrist beads and cast stone rings.",
+      "photo": "amethyst-set"
+    },
+    {
+      "slug": "men",
+      "name": "For the groom",
+      "blurb": "Cap chains, wrist beads and lapel pieces.",
+      "photo": "coral-red-worn-gown"
+    }
+  ],
+  "products": [
+    {
+      "id": "prd-001",
+      "slug": "iyawo-coral-bridal-set",
+      "name": "Ìyàwó Coral Bridal Set",
+      "tagline": "The full four-piece, made to your day",
+      "category": "bridal",
+      "collection": "Ìyàwó",
+      "material": "Natural coral",
+      "price": {
+        "ngn": 685000,
+        "usd": 900
+      },
+      "photo": "coral-red-set",
+      "finishes": [
+        {
+          "id": "coral-red",
+          "label": "Deep coral",
+          "swatch": "#C4472A",
+          "inStock": true
+        },
+        {
+          "id": "coral-pink",
+          "label": "Blush coral",
+          "swatch": "#E08A6E",
+          "inStock": true
+        },
+        {
+          "id": "coral-white",
+          "label": "White coral",
+          "swatch": "#EFE3D6",
+          "inStock": true
+        }
+      ],
+      "sizes": [
+        {
+          "id": "set-0",
+          "label": "Full set — necklace, earrings, bracelet, ring",
+          "inStock": true
+        },
+        {
+          "id": "set-1",
+          "label": "Three-piece — necklace, earrings, bracelet",
+          "inStock": true
+        },
+        {
+          "id": "set-2",
+          "label": "Necklace & earrings",
+          "inStock": true
+        },
+        {
+          "id": "set-3",
+          "label": "Necklace only",
+          "inStock": true
+        }
+      ],
+      "sizeLabel": "Set",
+      "description": "Four rows of natural coral branch with gold-capped accent beads, finished with a cast-gold coral pendant drop. Necklace, earrings, bracelet and ring, made together so the gold tone matches across all four. This is the set we make most often for traditional weddings, and we make each one to the bride's neckline.",
+      "details": [
+        "Four-row coral branch collar with hand-knotted gold accent beads",
+        "Cast 18k gold-plated pendant drop, seven coral settings",
+        "Matching earrings, bracelet and adjustable ring included",
+        "Cut to your measurement — send it at checkout or we'll call"
+      ],
+      "care": [
+        "Keep away from perfume, hairspray and body oils — spray before you put it on.",
+        "Wipe with a dry cloth after wearing; never soak coral or pearl in water.",
+        "Store flat in the Lui'Deo box, not hanging — strung pieces stretch.",
+        "Bring it back to us for restringing rather than pulling a loose strand."
+      ],
+      "badge": "Bestseller",
+      "rating": 5,
+      "reviews": 87,
+      "stock": 4,
+      "sku": "LD-BRI-001",
+      "madeToOrderDays": 21,
+      "createdAt": "2025-11-04",
+      "unitsSold": 164
+    },
+    {
+      "id": "prd-002",
+      "slug": "olori-coral-statement-necklace",
+      "name": "Olóri Coral Statement Necklace",
+      "tagline": "Weight on the collarbone",
+      "category": "coral",
+      "collection": "Olóri",
+      "material": "Natural coral",
+      "price": {
+        "ngn": 420000,
+        "usd": 550
+      },
+      "photo": "coral-red-worn-gown",
+      "finishes": [
+        {
+          "id": "coral-red",
+          "label": "Deep coral",
+          "swatch": "#C4472A",
+          "inStock": true
+        },
+        {
+          "id": "coral-pink",
+          "label": "Blush coral",
+          "swatch": "#E08A6E",
+          "inStock": true
+        }
+      ],
+      "sizes": [
+        {
+          "id": "rows-three-rows",
+          "label": "Three rows",
+          "inStock": true
+        },
+        {
+          "id": "rows-four-rows",
+          "label": "Four rows",
+          "inStock": true
+        },
+        {
+          "id": "rows-five-rows",
+          "label": "Five rows",
+          "inStock": true
+        }
+      ],
+      "sizeLabel": "Rows",
+      "description": "A collar built for photographs. Coral branch massed close so it sits high and full, with gold spacers catching the light between the rows. Heavy — deliberately so.",
+      "details": [
+        "Choice of three, four or five rows",
+        "Gold-plated barrel clasp, hand-knotted between sections",
+        "Sits 4cm below the collarbone on a size 14 neck"
+      ],
+      "care": [
+        "Keep away from perfume, hairspray and body oils — spray before you put it on.",
+        "Wipe with a dry cloth after wearing; never soak coral or pearl in water.",
+        "Store flat in the Lui'Deo box, not hanging — strung pieces stretch.",
+        "Bring it back to us for restringing rather than pulling a loose strand."
+      ],
+      "badge": "Bestseller",
+      "rating": 4.9,
+      "reviews": 64,
+      "stock": 6,
+      "sku": "LD-COR-002",
+      "madeToOrderDays": 14,
+      "createdAt": "2025-08-22",
+      "unitsSold": 132
+    },
+    {
+      "id": "prd-003",
+      "slug": "heritage-coral-choker-set",
+      "name": "Heritage Coral Choker Set",
+      "tagline": "Strung the old way",
+      "category": "coral",
+      "collection": "Heritage",
+      "material": "Natural coral",
+      "price": {
+        "ngn": 265000,
+        "usd": 348
+      },
+      "photo": "coral-red-worn-white-gele",
+      "finishes": [
+        {
+          "id": "coral-red",
+          "label": "Deep coral",
+          "swatch": "#C4472A",
+          "inStock": true
+        },
+        {
+          "id": "coral-white",
+          "label": "White coral",
+          "swatch": "#EFE3D6",
+          "inStock": true
+        }
+      ],
+      "sizes": [
+        {
+          "id": "set-0",
+          "label": "Full set — necklace, earrings, bracelet, ring",
+          "inStock": false
+        },
+        {
+          "id": "set-1",
+          "label": "Three-piece — necklace, earrings, bracelet",
+          "inStock": true
+        },
+        {
+          "id": "set-2",
+          "label": "Necklace & earrings",
+          "inStock": true
+        },
+        {
+          "id": "set-3",
+          "label": "Necklace only",
+          "inStock": true
+        }
+      ],
+      "sizeLabel": "Set",
+      "description": "Close to the throat, the way it was worn before the long collars came in. Round coral beads graduated to the centre, with a single gold bead at the clasp — the maker's mark we've used since we started.",
+      "details": [
+        "Graduated 8–14mm round coral, hand-knotted on silk",
+        "One gold bead at the clasp — our maker's mark",
+        "Restrung free of charge, for life"
+      ],
+      "care": [
+        "Keep away from perfume, hairspray and body oils — spray before you put it on.",
+        "Wipe with a dry cloth after wearing; never soak coral or pearl in water.",
+        "Store flat in the Lui'Deo box, not hanging — strung pieces stretch.",
+        "Bring it back to us for restringing rather than pulling a loose strand."
+      ],
+      "rating": 4.8,
+      "reviews": 41,
+      "stock": 9,
+      "sku": "LD-COR-003",
+      "madeToOrderDays": 10,
+      "createdAt": "2026-01-16",
+      "unitsSold": 78
+    },
+    {
+      "id": "prd-004",
+      "slug": "ade-coral-crown-set",
+      "name": "Adé Coral Crown Set",
+      "tagline": "Crown, collar and cuffs",
+      "category": "bridal",
+      "collection": "Olóri",
+      "material": "Natural coral",
+      "price": {
+        "ngn": 890000,
+        "usd": 1170
+      },
+      "photo": "blush-coral-set",
+      "finishes": [
+        {
+          "id": "coral-red",
+          "label": "Deep coral",
+          "swatch": "#C4472A",
+          "inStock": true
+        },
+        {
+          "id": "coral-pink",
+          "label": "Blush coral",
+          "swatch": "#E08A6E",
+          "inStock": true
+        }
+      ],
+      "sizes": [
+        {
+          "id": "rows-standard",
+          "label": "Standard",
+          "inStock": true
+        },
+        {
+          "id": "rows-tall-crown",
+          "label": "Tall crown",
+          "inStock": true
+        }
+      ],
+      "sizeLabel": "Crown height",
+      "description": "Our largest commission: a coral crown with matching collar, twin cuffs and rings. Built over three weeks on a brass frame so it holds its shape through a full day of dancing. Made to order only.",
+      "details": [
+        "Coral branch over a hand-formed brass frame",
+        "Includes crown, collar, two cuffs and two rings",
+        "Three weeks on the bench — order early",
+        "Fitted in the studio before it ships"
+      ],
+      "care": [
+        "Keep away from perfume, hairspray and body oils — spray before you put it on.",
+        "Wipe with a dry cloth after wearing; never soak coral or pearl in water.",
+        "Store flat in the Lui'Deo box, not hanging — strung pieces stretch.",
+        "Bring it back to us for restringing rather than pulling a loose strand."
+      ],
+      "badge": "Limited",
+      "rating": 5,
+      "reviews": 18,
+      "stock": 2,
+      "sku": "LD-BRI-004",
+      "madeToOrderDays": 28,
+      "createdAt": "2026-03-09",
+      "unitsSold": 24
+    },
+    {
+      "id": "prd-005",
+      "slug": "coral-branch-drop-earrings",
+      "name": "Coral Branch Drop Earrings",
+      "tagline": "Gold-cast, sold as a pair",
+      "category": "earrings",
+      "collection": "Everyday",
+      "material": "Natural coral",
+      "price": {
+        "ngn": 78000,
+        "usd": 102
+      },
+      "photo": "coral-earrings",
+      "finishes": [
+        {
+          "id": "coral-red",
+          "label": "Deep coral",
+          "swatch": "#C4472A",
+          "inStock": true
+        },
+        {
+          "id": "coral-pink",
+          "label": "Blush coral",
+          "swatch": "#E08A6E",
+          "inStock": true
+        },
+        {
+          "id": "coral-white",
+          "label": "White coral",
+          "swatch": "#EFE3D6",
+          "inStock": true
+        }
+      ],
+      "description": "Raw coral set in cast gold claws, the same setting we use on the Ìyàwó pendant. Big enough to carry a gele, light enough to wear all day.",
+      "details": [
+        "42mm drop, 11g the pair",
+        "Cast 18k gold-plated claw setting",
+        "Clip-on backs available — leave a note at checkout"
+      ],
+      "care": [
+        "Keep away from perfume, hairspray and body oils — spray before you put it on.",
+        "Wipe with a dry cloth after wearing; never soak coral or pearl in water.",
+        "Store flat in the Lui'Deo box, not hanging — strung pieces stretch.",
+        "Bring it back to us for restringing rather than pulling a loose strand."
+      ],
+      "badge": "Bestseller",
+      "rating": 4.9,
+      "reviews": 112,
+      "stock": 22,
+      "sku": "LD-EAR-005",
+      "madeToOrderDays": 7,
+      "createdAt": "2025-06-30",
+      "unitsSold": 246
+    },
+    {
+      "id": "prd-006",
+      "slug": "coral-cuff-and-ring-duo",
+      "name": "Coral Cuff & Ring Duo",
+      "tagline": "For the wrist that shows",
+      "category": "wrist",
+      "collection": "Everyday",
+      "material": "Natural coral",
+      "price": {
+        "ngn": 96000,
+        "usd": 126
+      },
+      "photo": "blush-coral-set-c",
+      "finishes": [
+        {
+          "id": "coral-red",
+          "label": "Deep coral",
+          "swatch": "#C4472A",
+          "inStock": true
+        },
+        {
+          "id": "gold",
+          "label": "Gold",
+          "swatch": "#C9A227",
+          "inStock": true
+        }
+      ],
+      "sizes": [
+        {
+          "id": "small",
+          "label": "Small — 16cm",
+          "inStock": true
+        },
+        {
+          "id": "medium",
+          "label": "Medium — 18cm",
+          "inStock": true
+        },
+        {
+          "id": "large",
+          "label": "Large — 20cm",
+          "inStock": true
+        }
+      ],
+      "sizeLabel": "Wrist",
+      "description": "Three rows of coral branch on the wrist with a matching cast ring. The pair most often bought by the bride's mother, and the one guests ask about.",
+      "details": [
+        "Three-row coral cuff on jeweller's elastic",
+        "Adjustable cast ring, one size",
+        "Sold as a pair"
+      ],
+      "care": [
+        "Keep away from perfume, hairspray and body oils — spray before you put it on.",
+        "Wipe with a dry cloth after wearing; never soak coral or pearl in water.",
+        "Store flat in the Lui'Deo box, not hanging — strung pieces stretch.",
+        "Bring it back to us for restringing rather than pulling a loose strand."
+      ],
+      "rating": 4.7,
+      "reviews": 58,
+      "stock": 16,
+      "sku": "LD-WRI-006",
+      "madeToOrderDays": 7,
+      "createdAt": "2026-02-11",
+      "unitsSold": 141
+    },
+    {
+      "id": "prd-007",
+      "slug": "olori-emerald-gold-set",
+      "name": "Olóri Emerald & Gold Set",
+      "tagline": "Green stone in a cast gold frame",
+      "category": "stones",
+      "collection": "Olóri",
+      "material": "18k gold-plated brass",
+      "price": {
+        "ngn": 465000,
+        "usd": 610
+      },
+      "photo": "emerald-set",
+      "finishes": [
+        {
+          "id": "gold",
+          "label": "Gold",
+          "swatch": "#C9A227",
+          "inStock": true
+        }
+      ],
+      "sizes": [
+        {
+          "id": "set-0",
+          "label": "Full set — necklace, earrings, bracelet, ring",
+          "inStock": true
+        },
+        {
+          "id": "set-1",
+          "label": "Three-piece — necklace, earrings, bracelet",
+          "inStock": true
+        },
+        {
+          "id": "set-2",
+          "label": "Necklace & earrings",
+          "inStock": true
+        },
+        {
+          "id": "set-3",
+          "label": "Necklace only",
+          "inStock": true
+        }
+      ],
+      "sizeLabel": "Set",
+      "description": "A carved emerald-green cabochon set in a heavy cast-gold frame, hung from a twisted gold collar with a second stone dropping beneath it. Matching earrings, bangle and ring. The set we make most often for mothers of the bride.",
+      "details": [
+        "Hand-set green cabochon, cast 18k gold-plated frame",
+        "Twisted rope collar, 46cm, with a hidden box clasp",
+        "Matching drop earrings, bangle and adjustable ring"
+      ],
+      "care": [
+        "Keep away from perfume, hairspray and body oils — spray before you put it on.",
+        "Wipe with a dry cloth after wearing; never soak coral or pearl in water.",
+        "Store flat in the Lui'Deo box, not hanging — strung pieces stretch.",
+        "Bring it back to us for restringing rather than pulling a loose strand."
+      ],
+      "badge": "Bestseller",
+      "rating": 5,
+      "reviews": 52,
+      "stock": 5,
+      "sku": "LD-STO-007",
+      "madeToOrderDays": 18,
+      "createdAt": "2026-02-14",
+      "unitsSold": 96
+    },
+    {
+      "id": "prd-008",
+      "slug": "olori-amethyst-gold-set",
+      "name": "Olóri Amethyst & Gold Set",
+      "tagline": "Purple stone, hammered gold",
+      "category": "stones",
+      "collection": "Olóri",
+      "material": "18k gold-plated brass",
+      "price": {
+        "ngn": 385000,
+        "usd": 505
+      },
+      "photo": "amethyst-set",
+      "finishes": [
+        {
+          "id": "gold",
+          "label": "Gold",
+          "swatch": "#C9A227",
+          "inStock": true
+        }
+      ],
+      "sizes": [
+        {
+          "id": "set-0",
+          "label": "Full set — necklace, earrings, bracelet, ring",
+          "inStock": false
+        },
+        {
+          "id": "set-1",
+          "label": "Three-piece — necklace, earrings, bracelet",
+          "inStock": true
+        },
+        {
+          "id": "set-2",
+          "label": "Necklace & earrings",
+          "inStock": true
+        },
+        {
+          "id": "set-3",
+          "label": "Necklace only",
+          "inStock": true
+        }
+      ],
+      "sizeLabel": "Set",
+      "description": "Amethyst cabochons clustered along a fine gold collar, gathering into a drop at the centre. Lighter than the coral sets and easier to wear again after the wedding.",
+      "details": [
+        "Nine amethyst cabochons in cast gold settings",
+        "Fine gold collar, 42cm, adjustable by 4cm",
+        "Matching earrings and ring included"
+      ],
+      "care": [
+        "Keep away from perfume, hairspray and body oils — spray before you put it on.",
+        "Wipe with a dry cloth after wearing; never soak coral or pearl in water.",
+        "Store flat in the Lui'Deo box, not hanging — strung pieces stretch.",
+        "Bring it back to us for restringing rather than pulling a loose strand."
+      ],
+      "badge": "New",
+      "rating": 4.9,
+      "reviews": 37,
+      "stock": 8,
+      "sku": "LD-STO-008",
+      "madeToOrderDays": 14,
+      "createdAt": "2026-06-02",
+      "unitsSold": 64
+    },
+    {
+      "id": "prd-009",
+      "slug": "blush-coral-feather-set",
+      "name": "Blush Coral Feather Set",
+      "tagline": "The jewelled plume",
+      "category": "coral",
+      "collection": "Olóri",
+      "material": "Crystal & rhinestone",
+      "price": {
+        "ngn": 520000,
+        "usd": 685
+      },
+      "photo": "blush-coral-set",
+      "finishes": [
+        {
+          "id": "coral-pink",
+          "label": "Blush coral",
+          "swatch": "#E08A6E",
+          "inStock": true
+        },
+        {
+          "id": "coral-white",
+          "label": "White coral",
+          "swatch": "#EFE3D6",
+          "inStock": true
+        }
+      ],
+      "sizes": [
+        {
+          "id": "set-0",
+          "label": "Full set — necklace, earrings, bracelet, ring",
+          "inStock": true
+        },
+        {
+          "id": "set-1",
+          "label": "Three-piece — necklace, earrings, bracelet",
+          "inStock": true
+        },
+        {
+          "id": "set-2",
+          "label": "Necklace & earrings",
+          "inStock": true
+        },
+        {
+          "id": "set-3",
+          "label": "Necklace only",
+          "inStock": true
+        }
+      ],
+      "sizeLabel": "Set",
+      "description": "Four rows of blush coral closed with a crystal-set feather that falls across the collarbone, with amethyst and emerald cabochons picked out along the shaft. Our most photographed piece and the hardest to make.",
+      "details": [
+        "Four-row blush coral collar",
+        "Hand-set crystal feather pendant, 14cm",
+        "Amethyst and emerald cabochon accents",
+        "Matching earrings, cuff and two rings"
+      ],
+      "care": [
+        "Keep away from perfume, hairspray and body oils — spray before you put it on.",
+        "Wipe with a dry cloth after wearing; never soak coral or pearl in water.",
+        "Store flat in the Lui'Deo box, not hanging — strung pieces stretch.",
+        "Bring it back to us for restringing rather than pulling a loose strand."
+      ],
+      "badge": "Bestseller",
+      "rating": 5,
+      "reviews": 68,
+      "stock": 3,
+      "sku": "LD-COR-009",
+      "madeToOrderDays": 24,
+      "createdAt": "2026-04-19",
+      "unitsSold": 79
+    },
+    {
+      "id": "prd-010",
+      "slug": "olori-baroque-pearl-set",
+      "name": "Olóri Baroque Pearl Set",
+      "tagline": "Ivory pearl, gold cabochon",
+      "category": "pearl",
+      "collection": "Olóri",
+      "material": "Baroque pearl",
+      "price": {
+        "ngn": 545000,
+        "usd": 715
+      },
+      "photo": "pearl-set",
+      "finishes": [
+        {
+          "id": "pearl-ivory",
+          "label": "Ivory pearl",
+          "swatch": "#F2EADD",
+          "inStock": true
+        },
+        {
+          "id": "pearl-champ",
+          "label": "Champagne pearl",
+          "swatch": "#DCC9A6",
+          "inStock": true
+        }
+      ],
+      "sizes": [
+        {
+          "id": "set-0",
+          "label": "Full set — necklace, earrings, bracelet, ring",
+          "inStock": true
+        },
+        {
+          "id": "set-1",
+          "label": "Three-piece — necklace, earrings, bracelet",
+          "inStock": true
+        },
+        {
+          "id": "set-2",
+          "label": "Necklace & earrings",
+          "inStock": true
+        },
+        {
+          "id": "set-3",
+          "label": "Necklace only",
+          "inStock": true
+        }
+      ],
+      "sizeLabel": "Set",
+      "description": "Three rows of large baroque pearl — every one a different shape, which is the point — gathered around a gold-framed cabochon with three pearl drops beneath it. Matching gold-set studs and a bracelet complete it.",
+      "details": [
+        "14–18mm baroque pearl, hand-knotted on silk",
+        "Gold-framed cabochon centre with three pearl drops",
+        "Matching oval studs and single-row bracelet",
+        "Every pearl individually matched for lustre"
+      ],
+      "care": [
+        "Keep away from perfume, hairspray and body oils — spray before you put it on.",
+        "Wipe with a dry cloth after wearing; never soak coral or pearl in water.",
+        "Store flat in the Lui'Deo box, not hanging — strung pieces stretch.",
+        "Bring it back to us for restringing rather than pulling a loose strand."
+      ],
+      "badge": "Bestseller",
+      "rating": 5,
+      "reviews": 73,
+      "stock": 5,
+      "sku": "LD-PEA-010",
+      "madeToOrderDays": 18,
+      "createdAt": "2025-12-02",
+      "unitsSold": 118
+    },
+    {
+      "id": "prd-011",
+      "slug": "iyawo-blush-pearl-set",
+      "name": "Ìyàwó Blush Pearl Set",
+      "tagline": "Softer than coral, just as loud",
+      "category": "bridal",
+      "collection": "Ìyàwó",
+      "material": "Baroque pearl",
+      "price": {
+        "ngn": 495000,
+        "usd": 650
+      },
+      "photo": "blush-worn-portrait",
+      "finishes": [
+        {
+          "id": "pearl-blush",
+          "label": "Blush pearl",
+          "swatch": "#E7CFCB",
+          "inStock": true
+        },
+        {
+          "id": "pearl-ivory",
+          "label": "Ivory pearl",
+          "swatch": "#F2EADD",
+          "inStock": true
+        }
+      ],
+      "sizes": [
+        {
+          "id": "set-0",
+          "label": "Full set — necklace, earrings, bracelet, ring",
+          "inStock": true
+        },
+        {
+          "id": "set-1",
+          "label": "Three-piece — necklace, earrings, bracelet",
+          "inStock": true
+        },
+        {
+          "id": "set-2",
+          "label": "Necklace & earrings",
+          "inStock": true
+        },
+        {
+          "id": "set-3",
+          "label": "Necklace only",
+          "inStock": true
+        }
+      ],
+      "sizeLabel": "Set",
+      "description": "Blush baroque pearl with a gold-framed centre stone and a drop that falls just below it. Made for brides who want the scale of a coral set in a softer palette — it photographs beautifully against burgundy and wine aso-oke.",
+      "details": [
+        "Two-row blush baroque pearl collar",
+        "Gold cameo-style centre with pearl drop",
+        "Matching studs, bracelet and ring"
+      ],
+      "care": [
+        "Keep away from perfume, hairspray and body oils — spray before you put it on.",
+        "Wipe with a dry cloth after wearing; never soak coral or pearl in water.",
+        "Store flat in the Lui'Deo box, not hanging — strung pieces stretch.",
+        "Bring it back to us for restringing rather than pulling a loose strand."
+      ],
+      "badge": "New",
+      "rating": 4.9,
+      "reviews": 46,
+      "stock": 7,
+      "sku": "LD-BRI-011",
+      "madeToOrderDays": 18,
+      "createdAt": "2026-05-21",
+      "unitsSold": 82
+    },
+    {
+      "id": "prd-012",
+      "slug": "champagne-pearl-collar",
+      "name": "Champagne Pearl Collar",
+      "tagline": "Warm-toned, gold-clasped",
+      "category": "pearl",
+      "collection": "Olóri",
+      "material": "Freshwater pearl",
+      "price": {
+        "ngn": 310000,
+        "usd": 408
+      },
+      "photo": "pearl-strand-display",
+      "finishes": [
+        {
+          "id": "pearl-champ",
+          "label": "Champagne pearl",
+          "swatch": "#DCC9A6",
+          "inStock": true
+        },
+        {
+          "id": "pearl-ivory",
+          "label": "Ivory pearl",
+          "swatch": "#F2EADD",
+          "inStock": true
+        }
+      ],
+      "sizes": [
+        {
+          "id": "rows-two-rows",
+          "label": "Two rows",
+          "inStock": true
+        },
+        {
+          "id": "rows-three-rows",
+          "label": "Three rows",
+          "inStock": true
+        },
+        {
+          "id": "rows-four-rows",
+          "label": "Four rows",
+          "inStock": true
+        }
+      ],
+      "sizeLabel": "Rows",
+      "description": "Champagne freshwater pearl in graduated rows, finished with a gold filigree clasp meant to be worn at the front if you'd rather. Quieter than the baroque sets, and easier to wear again.",
+      "details": [
+        "9–11mm champagne freshwater pearl",
+        "Gold filigree clasp, wearable front or back",
+        "Two to four rows"
+      ],
+      "care": [
+        "Keep away from perfume, hairspray and body oils — spray before you put it on.",
+        "Wipe with a dry cloth after wearing; never soak coral or pearl in water.",
+        "Store flat in the Lui'Deo box, not hanging — strung pieces stretch.",
+        "Bring it back to us for restringing rather than pulling a loose strand."
+      ],
+      "rating": 4.8,
+      "reviews": 39,
+      "stock": 11,
+      "sku": "LD-PEA-012",
+      "madeToOrderDays": 12,
+      "createdAt": "2026-04-07",
+      "unitsSold": 67
+    },
+    {
+      "id": "prd-013",
+      "slug": "pearl-drop-bridal-earrings",
+      "name": "Pearl Drop Bridal Earrings",
+      "tagline": "Gold-set, single baroque",
+      "category": "earrings",
+      "collection": "Ìyàwó",
+      "material": "Baroque pearl",
+      "price": {
+        "ngn": 68000,
+        "usd": 89
+      },
+      "photo": "pearl-earrings",
+      "finishes": [
+        {
+          "id": "pearl-ivory",
+          "label": "Ivory pearl",
+          "swatch": "#F2EADD",
+          "inStock": true
+        },
+        {
+          "id": "pearl-blush",
+          "label": "Blush pearl",
+          "swatch": "#E7CFCB",
+          "inStock": true
+        },
+        {
+          "id": "pearl-champ",
+          "label": "Champagne pearl",
+          "swatch": "#DCC9A6",
+          "inStock": true
+        }
+      ],
+      "description": "One large baroque pearl in a brushed gold oval setting. Worn on their own with a gele, or alongside the Olóri collar.",
+      "details": [
+        "16–18mm baroque pearl in a brushed gold oval",
+        "28mm overall, 9g the pair",
+        "Post or clip-on"
+      ],
+      "care": [
+        "Keep away from perfume, hairspray and body oils — spray before you put it on.",
+        "Wipe with a dry cloth after wearing; never soak coral or pearl in water.",
+        "Store flat in the Lui'Deo box, not hanging — strung pieces stretch.",
+        "Bring it back to us for restringing rather than pulling a loose strand."
+      ],
+      "rating": 4.9,
+      "reviews": 94,
+      "stock": 26,
+      "sku": "LD-EAR-013",
+      "madeToOrderDays": 7,
+      "createdAt": "2025-09-15",
+      "unitsSold": 208
+    },
+    {
+      "id": "prd-014",
+      "slug": "pearl-wrist-and-ring-set",
+      "name": "Pearl Wrist & Ring Set",
+      "tagline": "The pieces that finish it",
+      "category": "wrist",
+      "collection": "Everyday",
+      "material": "Freshwater pearl",
+      "price": {
+        "ngn": 84000,
+        "usd": 110
+      },
+      "photo": "pearl-worn-choker",
+      "finishes": [
+        {
+          "id": "pearl-ivory",
+          "label": "Ivory pearl",
+          "swatch": "#F2EADD",
+          "inStock": true
+        },
+        {
+          "id": "pearl-blush",
+          "label": "Blush pearl",
+          "swatch": "#E7CFCB",
+          "inStock": true
+        }
+      ],
+      "sizes": [
+        {
+          "id": "small",
+          "label": "Small — 16cm",
+          "inStock": true
+        },
+        {
+          "id": "medium",
+          "label": "Medium — 18cm",
+          "inStock": true
+        },
+        {
+          "id": "large",
+          "label": "Large — 20cm",
+          "inStock": true
+        }
+      ],
+      "sizeLabel": "Wrist",
+      "description": "A single-row pearl bracelet with a gold bar clasp and a matching pearl ring. What most brides add once the necklace is chosen.",
+      "details": [
+        "Single-row 10mm freshwater pearl",
+        "Gold bar clasp with safety catch",
+        "Adjustable pearl ring included"
+      ],
+      "care": [
+        "Keep away from perfume, hairspray and body oils — spray before you put it on.",
+        "Wipe with a dry cloth after wearing; never soak coral or pearl in water.",
+        "Store flat in the Lui'Deo box, not hanging — strung pieces stretch.",
+        "Bring it back to us for restringing rather than pulling a loose strand."
+      ],
+      "rating": 4.7,
+      "reviews": 52,
+      "stock": 19,
+      "sku": "LD-WRI-014",
+      "madeToOrderDays": 7,
+      "createdAt": "2026-06-18",
+      "unitsSold": 96
+    },
+    {
+      "id": "prd-015",
+      "slug": "grooms-coral-cap-chain",
+      "name": "Groom's Coral Cap Chain",
+      "tagline": "For the fila, and the wrist",
+      "category": "men",
+      "collection": "Heritage",
+      "material": "Natural coral",
+      "price": {
+        "ngn": 118000,
+        "usd": 155
+      },
+      "photo": "coral-red-worn-gown",
+      "finishes": [
+        {
+          "id": "coral-red",
+          "label": "Deep coral",
+          "swatch": "#C4472A",
+          "inStock": true
+        },
+        {
+          "id": "gold",
+          "label": "Gold",
+          "swatch": "#C9A227",
+          "inStock": true
+        }
+      ],
+      "sizes": [
+        {
+          "id": "small",
+          "label": "Small — 16cm",
+          "inStock": true
+        },
+        {
+          "id": "medium",
+          "label": "Medium — 18cm",
+          "inStock": true
+        },
+        {
+          "id": "large",
+          "label": "Large — 20cm",
+          "inStock": true
+        }
+      ],
+      "sizeLabel": "Wrist bead size",
+      "description": "Coral cap chain with matching wrist beads — what the groom wears against the bride's set, tone-matched so the two read as a pair in photographs.",
+      "details": [
+        "Coral cap chain with gold hook",
+        "Matching double-row wrist beads",
+        "Tone-matched to the bride's set on request"
+      ],
+      "care": [
+        "Keep away from perfume, hairspray and body oils — spray before you put it on.",
+        "Wipe with a dry cloth after wearing; never soak coral or pearl in water.",
+        "Store flat in the Lui'Deo box, not hanging — strung pieces stretch.",
+        "Bring it back to us for restringing rather than pulling a loose strand."
+      ],
+      "rating": 4.8,
+      "reviews": 34,
+      "stock": 14,
+      "sku": "LD-MEN-015",
+      "madeToOrderDays": 10,
+      "createdAt": "2026-01-29",
+      "unitsSold": 71
+    },
+    {
+      "id": "prd-016",
+      "slug": "grooms-coral-lapel-pin",
+      "name": "Groom's Coral Lapel Pin",
+      "tagline": "One small red thing",
+      "category": "men",
+      "collection": "Everyday",
+      "material": "Natural coral",
+      "price": {
+        "ngn": 46000,
+        "usd": 60
+      },
+      "photo": "blush-coral-set-d",
+      "finishes": [
+        {
+          "id": "coral-red",
+          "label": "Deep coral",
+          "swatch": "#C4472A",
+          "inStock": true
+        },
+        {
+          "id": "gold",
+          "label": "Gold",
+          "swatch": "#C9A227",
+          "inStock": true
+        }
+      ],
+      "description": "A single raw coral branch in a cast gold claw, on a pin. For the groom, the father, or anybody in the party who wants to be in the palette without wearing a full set.",
+      "details": [
+        "34mm cast gold claw setting",
+        "Butterfly pin back",
+        "Sold singly, boxed"
+      ],
+      "care": [
+        "Keep away from perfume, hairspray and body oils — spray before you put it on.",
+        "Wipe with a dry cloth after wearing; never soak coral or pearl in water.",
+        "Store flat in the Lui'Deo box, not hanging — strung pieces stretch.",
+        "Bring it back to us for restringing rather than pulling a loose strand."
+      ],
+      "badge": "New",
+      "rating": 4.6,
+      "reviews": 27,
+      "stock": 31,
+      "sku": "LD-MEN-016",
+      "madeToOrderDays": 5,
+      "createdAt": "2026-07-12",
+      "unitsSold": 88
+    },
+    {
+      "id": "prd-017",
+      "slug": "gele-brooch-and-pin-set",
+      "name": "Gele Brooch & Pin Set",
+      "tagline": "Holds the wrap, catches the light",
+      "category": "wrist",
+      "collection": "Everyday",
+      "material": "Crystal & rhinestone",
+      "price": {
+        "ngn": 38000,
+        "usd": 50
+      },
+      "photo": "amethyst-worn-gold",
+      "finishes": [
+        {
+          "id": "gold",
+          "label": "Gold",
+          "swatch": "#C9A227",
+          "inStock": true
+        },
+        {
+          "id": "pearl-ivory",
+          "label": "Ivory pearl",
+          "swatch": "#F2EADD",
+          "inStock": true
+        },
+        {
+          "id": "coral-red",
+          "label": "Deep coral",
+          "swatch": "#C4472A",
+          "inStock": true
+        }
+      ],
+      "description": "A weighted brooch and two hair pins, set with crystal and finished in gold. Does the job of holding a gele and still looks like jewellery.",
+      "details": [
+        "One brooch, two pins",
+        "Crystal set in gold-plated brass",
+        "Strong enough for aso-oke and damask"
+      ],
+      "care": [
+        "Keep away from perfume, hairspray and body oils — spray before you put it on.",
+        "Wipe with a dry cloth after wearing; never soak coral or pearl in water.",
+        "Store flat in the Lui'Deo box, not hanging — strung pieces stretch.",
+        "Bring it back to us for restringing rather than pulling a loose strand."
+      ],
+      "rating": 4.5,
+      "reviews": 61,
+      "stock": 44,
+      "sku": "LD-WRI-017",
+      "madeToOrderDays": 3,
+      "createdAt": "2025-10-08",
+      "unitsSold": 187
+    },
+    {
+      "id": "prd-018",
+      "slug": "family-coral-order",
+      "name": "Family Coral Order",
+      "tagline": "Six guests, one palette",
+      "category": "coral",
+      "collection": "Heritage",
+      "material": "Natural coral",
+      "price": {
+        "ngn": 540000,
+        "usd": 710
+      },
+      "compareAt": {
+        "ngn": 648000,
+        "usd": 852
+      },
+      "photo": "blush-coral-set-b",
+      "finishes": [
+        {
+          "id": "coral-red",
+          "label": "Deep coral",
+          "swatch": "#C4472A",
+          "inStock": true
+        },
+        {
+          "id": "coral-pink",
+          "label": "Blush coral",
+          "swatch": "#E08A6E",
+          "inStock": true
+        }
+      ],
+      "sizes": [
+        {
+          "id": "rows-six-pieces",
+          "label": "Six pieces",
+          "inStock": true
+        },
+        {
+          "id": "rows-eight-pieces",
+          "label": "Eight pieces",
+          "inStock": true
+        },
+        {
+          "id": "rows-twelve-pieces",
+          "label": "Twelve pieces",
+          "inStock": true
+        }
+      ],
+      "sizeLabel": "Party size",
+      "description": "Matching single-row coral sets for the aso-ebi party, made from one batch of coral so the colour runs true across every guest. Priced per group, about 15% below buying singly.",
+      "details": [
+        "Single-row necklace and earrings per guest",
+        "Cut from one coral batch — no colour drift",
+        "Six, eight or twelve pieces",
+        "Four weeks' notice, please"
+      ],
+      "care": [
+        "Keep away from perfume, hairspray and body oils — spray before you put it on.",
+        "Wipe with a dry cloth after wearing; never soak coral or pearl in water.",
+        "Store flat in the Lui'Deo box, not hanging — strung pieces stretch.",
+        "Bring it back to us for restringing rather than pulling a loose strand."
+      ],
+      "badge": "Limited",
+      "rating": 5,
+      "reviews": 22,
+      "stock": 3,
+      "sku": "LD-COR-018",
+      "madeToOrderDays": 28,
+      "createdAt": "2026-08-05",
+      "unitsSold": 31
+    }
+  ]
+}

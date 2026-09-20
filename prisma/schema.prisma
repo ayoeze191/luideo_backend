@@ -1,0 +1,358 @@
+// Lui'Deo — database schema.
+//
+// Money is stored in minor units (kobo / cents) for both currencies, because
+// prices are authored per currency rather than converted. The API turns these
+// back into the frontend's `Money` shape: { ngn, usd } in major units.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/* ------------------------------------------------------------ Accounts */
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+model User {
+  id              String    @id @default(cuid())
+  /// Always stored lower-cased.
+  email           String    @unique
+  name            String
+  phone           String?
+  /// Null for accounts that only ever signed in with Google.
+  passwordHash    String?
+  googleId        String?   @unique
+  avatarUrl       String?
+  emailVerifiedAt DateTime?
+  role            Role      @default(CUSTOMER)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  sessions      Session[]
+  emailTokens   EmailToken[]
+  orders        Order[]
+  wishlist      WishlistItem[]
+  subscription  AlertSubscription?
+}
+
+/// Server-side sessions: the cookie holds a random token, the database only
+/// its SHA-256 hash. Logging out deletes the row, so it takes effect at once.
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent String?
+  ip        String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+enum EmailTokenPurpose {
+  VERIFY_EMAIL
+  RESET_PASSWORD
+}
+
+model EmailToken {
+  id        String            @id @default(cuid())
+  tokenHash String            @unique
+  purpose   EmailTokenPurpose
+  userId    String
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime          @default(now())
+
+  @@index([userId, purpose])
+}
+
+/* ------------------------------------------------------------ Catalogue */
+
+model Category {
+  slug      String    @id
+  name      String
+  blurb     String
+  photo     String?
+  sortOrder Int       @default(0)
+  products  Product[]
+}
+
+model Product {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  name            String
+  tagline         String
+  categorySlug    String
+  category        Category @relation(fields: [categorySlug], references: [slug])
+  collection      String
+  material        String
+  priceKobo       Int
+  priceCents      Int
+  compareAtKobo   Int?
+  compareAtCents  Int?
+  photo           String?
+  /// Variant[] — { id, label, swatch?, inStock }
+  finishes        Json
+  /// Variant[] | null
+  sizes           Json?
+  sizeLabel       String?
+  description     String
+  details         String[]
+  care            String[]
+  badge           String?
+  rating          Float    @default(0)
+  reviews         Int      @default(0)
+  stock           Int      @default(0)
+  sku             String   @unique
+  madeToOrderDays Int      @default(14)
+  unitsSold       Int      @default(0)
+  /// Unpublished products are hidden from the shop but kept for order history.
+  published       Boolean  @default(true)
+  /// Set once "similar item" alerts have gone out, so edits don't re-send them.
+  alertsSentAt    DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  orderItems OrderItem[]
+  wishlisted WishlistItem[]
+  alerts     ProductAlert[]
+  socialPosts SocialPost[]
+
+  @@index([categorySlug])
+  @@index([collection])
+  @@index([published, createdAt])
+}
+
+model WishlistItem {
+  userId    String
+  productId String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, productId])
+}
+
+/* ------------------------------------------------------------ Orders */
+
+enum Currency {
+  NGN
+  USD
+}
+
+enum OrderStatus {
+  PENDING
+  IN_STUDIO
+  SHIPPED
+  DELIVERED
+  REFUNDED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  AWAITING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentProvider {
+  PAYSTACK
+  COD
+}
+
+model Order {
+  id              String          @id @default(cuid())
+  /// Customer-facing, e.g. LD-7K3M9Q.
+  reference       String          @unique
+  /// Lets a guest open their own confirmation page without an account.
+  guestTokenHash  String
+  /// Null for guest checkouts; linked later if they sign up with the same email.
+  userId          String?
+  user            User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  email           String
+  name            String
+  phone           String
+  currency        Currency
+  status          OrderStatus     @default(PENDING)
+  paymentStatus   PaymentStatus   @default(AWAITING)
+  paymentProvider PaymentProvider
+  /// Reference of the latest Paystack attempt.
+  providerRef     String?
+  channel         String          @default("Website")
+  subtotalKobo    Int
+  subtotalCents   Int
+  shippingKobo    Int
+  shippingCents   Int
+  discountKobo    Int             @default(0)
+  discountCents   Int             @default(0)
+  totalKobo       Int
+  totalCents      Int
+  shippingMethod  String
+  /// { line1, city, state, country, postcode? }
+  address         Json
+  note            String?
+  etaDays         Int
+  paidAt          DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  items  OrderItem[]
+  events OrderEvent[]
+
+  @@index([email])
+  @@index([userId])
+  @@index([paymentStatus, createdAt])
+}
+
+/// A snapshot of the product at the time of sale. Category and collection are
+/// copied too, so "similar item" alerts still work if the product is edited.
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String?
+  product     Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  name        String
+  slug        String
+  photo       String?
+  category    String
+  collection  String
+  material    String
+  finishId    String
+  finishLabel String
+  sizeId      String?
+  sizeLabel   String?
+  quantity    Int
+  unitKobo    Int
+  unitCents   Int
+
+  @@index([orderId])
+  @@index([category])
+  @@index([collection])
+}
+
+model OrderEvent {
+  id      String   @id @default(cuid())
+  orderId String
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  label   String
+  at      DateTime @default(now())
+
+  @@index([orderId])
+}
+
+/* ------------------------------------------------------------ Alerts */
+
+/// One row per email that wants to hear about new pieces. Works for guests
+/// (opted in at checkout) and for signed-in users (linked by userId).
+model AlertSubscription {
+  id                 String         @id @default(cuid())
+  email              String         @unique
+  userId             String?        @unique
+  user               User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  enabled            Boolean        @default(true)
+  /// Match new products against the categories/collections this person has paid for.
+  similarToPurchases Boolean        @default(true)
+  /// Explicitly followed category slugs, regardless of purchase history.
+  categories         String[]       @default([])
+  /// Explicitly followed collections.
+  collections        String[]       @default([])
+  unsubscribeToken   String         @unique
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  alerts ProductAlert[]
+}
+
+/// An in-app notification (for users) and a record of the email that went out.
+model ProductAlert {
+  id             String            @id @default(cuid())
+  subscriptionId String
+  subscription   AlertSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  productId      String
+  product        Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  /// Human-readable, e.g. "Because you bought from Coral".
+  reason         String
+  emailedAt      DateTime?
+  readAt         DateTime?
+  createdAt      DateTime          @default(now())
+
+  @@unique([subscriptionId, productId])
+  @@index([subscriptionId, readAt])
+}
+
+/* ------------------------------------------------------------ Contact */
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  subject   String
+  message   String
+  createdAt DateTime @default(now())
+}
+
+/* ------------------------------------------------------------ Social */
+
+/// The one connected Facebook Page (and the Instagram account linked to it).
+/// Tokens are encrypted at rest — see src/lib/crypto.ts.
+model SocialConnection {
+  /// Always "meta" — a single row.
+  id                 String    @id
+  /// Long-lived user token; only kept while a Page still needs choosing.
+  userTokenEnc       String?
+  userTokenExpiresAt DateTime?
+  pageId             String?
+  pageName           String?
+  pageTokenEnc       String?
+  igUserId           String?
+  igUsername         String?
+  connectedById      String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+enum SocialTarget {
+  IG_FEED
+  IG_STORY
+  FB_FEED
+  FB_STORY
+}
+
+enum SocialPostStatus {
+  SCHEDULED
+  PUBLISHING
+  POSTED
+  FAILED
+}
+
+model SocialPost {
+  id          String           @id @default(cuid())
+  productId   String?
+  product     Product?         @relation(fields: [productId], references: [id], onDelete: SetNull)
+  target      SocialTarget
+  caption     String           @default("")
+  /// Must be publicly reachable — Meta downloads it.
+  imageUrl    String
+  link        String?
+  status      SocialPostStatus
+  scheduledAt DateTime?
+  postedAt    DateTime?
+  externalId  String?
+  permalink   String?
+  error       String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([status, scheduledAt])
+}
