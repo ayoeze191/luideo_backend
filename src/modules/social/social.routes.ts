@@ -3,7 +3,7 @@ import { z } from "zod";
 import { env, isProd } from "../../config/env.ts";
 import { notFound } from "../../lib/http-error.ts";
 import { prisma } from "../../lib/prisma.ts";
-import { randomToken, safeEqual } from "../../lib/tokens.ts";
+import { safeEqual, signTicket, verifyTicket } from "../../lib/tokens.ts";
 import { currentUser } from "../../middleware/auth.ts";
 import { exchangeCode, loginDialogUrl } from "./meta.ts";
 import * as social from "./social.service.ts";
@@ -18,33 +18,13 @@ socialRouter.get("/status", async (_req, res) => {
   res.json(await social.connectionStatus());
 });
 
-/** Browser navigates here; we bounce to Facebook's login dialog. */
-socialRouter.get("/connect", (_req, res) => {
-  const state = randomToken();
-  res.cookie(STATE_COOKIE, state, { httpOnly: true, secure: isProd, sameSite: "lax", maxAge: 10 * 60 * 1000, path: "/api/admin/social" });
-  res.redirect(loginDialogUrl(state));
-});
-
-/** Facebook sends the admin back here with ?code&state. */
-socialRouter.get("/callback", async (req, res) => {
-  const { code, state, error_description } = req.query as Record<string, string | undefined>;
-  const expected = req.cookies?.[STATE_COOKIE];
-  res.clearCookie(STATE_COOKIE, { path: "/api/admin/social" });
-
-  if (error_description) return res.redirect(back(`error=${encodeURIComponent(error_description)}`));
-  if (!code || !state || typeof expected !== "string" || !safeEqual(state, expected)) {
-    return res.redirect(back("error=The+connection+request+expired.+Please+try+again."));
-  }
-
-  try {
-    const { token, expiresAt } = await exchangeCode(code);
-    const pages = await social.saveUserToken(token, expiresAt, currentUser(req).id);
-    if (pages === 0) return res.redirect(back("error=This+Facebook+account+doesn't+manage+any+Pages."));
-    res.redirect(back(pages === 1 ? "connected=1" : "choose=1"));
-  } catch (err) {
-    console.error("Meta OAuth callback failed:", err);
-    res.redirect(back(`error=${encodeURIComponent(err instanceof Error ? err.message : "Connection failed")}`));
-  }
+/**
+ * Step one of connecting: a signed-in admin asks (with their session) for a
+ * one-time link, then the browser opens it. See socialOAuthRouter below.
+ */
+socialRouter.post("/connect-link", (req, res) => {
+  const ticket = signTicket(currentUser(req).id, 2 * 60);
+  res.json({ url: `${env.API_URL}/api/admin/social/connect?ticket=${encodeURIComponent(ticket)}` });
 });
 
 socialRouter.get("/pages", async (_req, res) => {
@@ -125,4 +105,47 @@ socialRouter.delete("/posts/:id", async (req, res) => {
   const { count } = await prisma.socialPost.deleteMany({ where: { id: req.params.id, status: "SCHEDULED" } });
   if (!count) throw notFound("No scheduled post with that id.");
   res.status(204).end();
+});
+
+/**
+ * The two steps of the Facebook login that the browser opens directly: the
+ * admin's session cookie may not come along (it was set cross-site), so these
+ * are mounted outside requireAdmin and identify the admin by a signed ticket.
+ */
+export const socialOAuthRouter = Router();
+
+/** Opened with the ticket from /connect-link; bounces to Facebook's login dialog. */
+socialOAuthRouter.get("/connect", async (req, res) => {
+  const adminId = verifyTicket(String(req.query.ticket ?? ""));
+  const admin = adminId ? await prisma.user.findUnique({ where: { id: adminId } }) : null;
+  if (admin?.role !== "ADMIN") {
+    return res.redirect(back("error=That+link+has+expired.+Click+Connect+with+Facebook+again."));
+  }
+  // The OAuth state carries the admin's id, signed; the cookie ties it to this browser.
+  const state = signTicket(admin.id, 10 * 60);
+  res.cookie(STATE_COOKIE, state, { httpOnly: true, secure: isProd, sameSite: "lax", maxAge: 10 * 60 * 1000, path: "/api/admin/social" });
+  res.redirect(loginDialogUrl(state));
+});
+
+/** Facebook sends the admin back here with ?code&state. */
+socialOAuthRouter.get("/callback", async (req, res) => {
+  const { code, state, error_description } = req.query as Record<string, string | undefined>;
+  const expected = req.cookies?.[STATE_COOKIE];
+  res.clearCookie(STATE_COOKIE, { path: "/api/admin/social" });
+
+  if (error_description) return res.redirect(back(`error=${encodeURIComponent(error_description)}`));
+  const adminId = state && typeof expected === "string" && safeEqual(state, expected) ? verifyTicket(state) : null;
+  if (!code || !adminId) {
+    return res.redirect(back("error=The+connection+request+expired.+Please+try+again."));
+  }
+
+  try {
+    const { token, expiresAt } = await exchangeCode(code);
+    const pages = await social.saveUserToken(token, expiresAt, adminId);
+    if (pages === 0) return res.redirect(back("error=This+Facebook+account+doesn't+manage+any+Pages."));
+    res.redirect(back(pages === 1 ? "connected=1" : "choose=1"));
+  } catch (err) {
+    console.error("Meta OAuth callback failed:", err);
+    res.redirect(back(`error=${encodeURIComponent(err instanceof Error ? err.message : "Connection failed")}`));
+  }
 });

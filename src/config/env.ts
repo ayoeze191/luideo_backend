@@ -37,6 +37,8 @@ const schema = z.object({
 
   META_APP_ID: optional,
   META_APP_SECRET: optional,
+  /** Facebook Login for Business configuration ID. When set, it replaces the scope list. */
+  META_CONFIG_ID: optional,
   META_GRAPH_VERSION: z.string().default("v23.0"),
 
   CLOUDINARY_URL: optional,

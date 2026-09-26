@@ -15,6 +15,7 @@ import { catalogRouter } from "./modules/catalog/catalog.routes.ts";
 import { contactRouter } from "./modules/contact/contact.routes.ts";
 import { ordersRouter } from "./modules/orders/orders.routes.ts";
 import { webhooksRouter } from "./modules/payments/webhooks.routes.ts";
+import { socialOAuthRouter } from "./modules/social/social.routes.ts";
 import { UPLOAD_DIR } from "./modules/uploads/uploads.ts";
 
 export function createApp() {
@@ -54,6 +55,8 @@ export function createApp() {
   app.use("/api/me", accountRouter);
   app.use("/api/alerts", alertsRouter);
   app.use("/api/contact", contactRouter);
+  // Before the admin router: these two are opened by the browser directly and carry a signed ticket instead.
+  app.use("/api/admin/social", socialOAuthRouter);
   app.use("/api/admin", adminRouter);
 
   app.use(notFoundHandler);

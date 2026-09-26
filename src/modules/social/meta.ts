@@ -58,7 +58,9 @@ export function loginDialogUrl(state: string) {
     redirect_uri: redirectUri(),
     state,
     response_type: "code",
-    scope: META_SCOPES.join(","),
+    // Facebook Login for Business apps take a configuration (set up in the Meta
+    // dashboard with the same permissions) instead of a list of scopes.
+    ...(env.META_CONFIG_ID ? { config_id: env.META_CONFIG_ID } : { scope: META_SCOPES.join(",") }),
   });
   return `https://www.facebook.com/${env.META_GRAPH_VERSION}/dialog/oauth?${params}`;
 }
