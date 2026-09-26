@@ -38,6 +38,9 @@ export function resetPassword(to: string, name: string, token: string): Mail {
   };
 }
 
+/** Guests have no account to sign in to, so every order email links here. */
+export const trackLink = (reference: string) => `${env.FRONTEND_URL}/track?ref=${encodeURIComponent(reference)}`;
+
 export function orderReceipt(order: {
   reference: string;
   name: string;
@@ -45,8 +48,17 @@ export function orderReceipt(order: {
   totalLabel: string;
   etaDays: number;
   lines: { name: string; detail: string; quantity: number }[];
+  /** Pay on delivery: nothing has been paid yet. */
+  payOnDelivery?: boolean;
 }): Mail {
-  const link = `${env.FRONTEND_URL}/orders`;
+  const link = trackLink(order.reference);
+  const opening = order.payOnDelivery
+    ? `We've received order <b>${order.reference}</b>. You'll pay ${escape(order.totalLabel)} when it's delivered. Your pieces go to the bench now and should be ready in about ${order.etaDays} days.`
+    : `We've received payment for order <b>${order.reference}</b> (${escape(order.totalLabel)}). Your pieces go to the bench now and should be ready in about ${order.etaDays} days.`;
+  const openingText = order.payOnDelivery
+    ? `We've received order ${order.reference}. You'll pay ${order.totalLabel} when it's delivered. Ready in about ${order.etaDays} days.`
+    : `We've received payment for order ${order.reference} (${order.totalLabel}). Ready in about ${order.etaDays} days.`;
+  const keep = `To track it, use your order number <b>${order.reference}</b> and this email address.`;
   const rows = order.lines
     .map((l) => `<li style="margin:6px 0">${escape(l.name)} × ${l.quantity}<br><span style="color:#78716c;font-size:14px">${escape(l.detail)}</span></li>`)
     .join("");
@@ -55,11 +67,12 @@ export function orderReceipt(order: {
     subject: `Order ${order.reference} confirmed — Lui'Deo`,
     html: layout(
       p(`Thank you, ${escape(order.name)}.`) +
-        p(`We've received payment for order <b>${order.reference}</b> (${escape(order.totalLabel)}). Your pieces go to the bench now and should be ready in about ${order.etaDays} days.`) +
+        p(opening) +
         `<ul style="padding-left:18px;font-size:16px">${rows}</ul>` +
-        button(link, "View your order"),
+        p(keep) +
+        button(link, "Track your order"),
     ),
-    text: `Thank you, ${order.name}.\n\nWe've received payment for order ${order.reference} (${order.totalLabel}). Ready in about ${order.etaDays} days.\n\n${order.lines.map((l) => `- ${l.name} × ${l.quantity} (${l.detail})`).join("\n")}\n\n${link}`,
+    text: `Thank you, ${order.name}.\n\n${openingText}\n\n${order.lines.map((l) => `- ${l.name} × ${l.quantity} (${l.detail})`).join("\n")}\n\nTrack it with your order number ${order.reference} and this email address:\n${link}`,
   };
 }
 
@@ -67,8 +80,8 @@ export function orderStatusUpdate(to: string, name: string, reference: string, s
   return {
     to,
     subject: `Order ${reference}: ${status} — Lui'Deo`,
-    html: layout(p(`Hello ${escape(name)},`) + p(`Your order <b>${reference}</b> is now <b>${escape(status.toLowerCase())}</b>.`) + button(`${env.FRONTEND_URL}/orders`, "Track your order")),
-    text: `Hello ${name},\n\nYour order ${reference} is now ${status.toLowerCase()}.\n\n${env.FRONTEND_URL}/orders`,
+    html: layout(p(`Hello ${escape(name)},`) + p(`Your order <b>${reference}</b> is now <b>${escape(status.toLowerCase())}</b>.`) + button(trackLink(reference), "Track your order")),
+    text: `Hello ${name},\n\nYour order ${reference} is now ${status.toLowerCase()}.\n\nTrack it: ${trackLink(reference)}`,
   };
 }
 

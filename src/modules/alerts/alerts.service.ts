@@ -33,6 +33,20 @@ export async function subscribeGuest(email: string) {
   });
 }
 
+/** The footer's "studio letter": follow every category, so each new piece is announced. */
+export async function subscribeNewsletter(email: string) {
+  const categories = (await prisma.category.findMany({ select: { slug: true } })).map((c) => c.slug);
+  const existing = await prisma.alertSubscription.findUnique({ where: { email } });
+  if (existing) {
+    await prisma.alertSubscription.update({
+      where: { id: existing.id },
+      data: { enabled: true, categories: [...new Set([...existing.categories, ...categories])] },
+    });
+  } else {
+    await prisma.alertSubscription.create({ data: { email, categories, unsubscribeToken: randomToken() } });
+  }
+}
+
 /** Finds the user's subscription, adopting a guest one under the same (verified) email. */
 async function findForUser(user: User) {
   const mine = await prisma.alertSubscription.findUnique({ where: { userId: user.id } });

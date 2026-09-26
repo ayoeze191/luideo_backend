@@ -68,6 +68,8 @@ async function main() {
   if (ADMIN_EMAIL && ADMIN_PASSWORD) {
     if (ADMIN_PASSWORD.length < 12) throw new Error("ADMIN_PASSWORD must be at least 12 characters.");
     const email = ADMIN_EMAIL.trim().toLowerCase();
+    const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 12);
+    // Re-running the seed also resets the admin's password to ADMIN_PASSWORD.
     await prisma.user.upsert({
       where: { email },
       create: {
@@ -75,9 +77,9 @@ async function main() {
         name: ADMIN_NAME || "Lui'Deo Studio",
         role: "ADMIN",
         emailVerifiedAt: new Date(),
-        passwordHash: await bcrypt.hash(ADMIN_PASSWORD, 12),
+        passwordHash,
       },
-      update: { role: "ADMIN", emailVerifiedAt: new Date() },
+      update: { role: "ADMIN", emailVerifiedAt: new Date(), passwordHash },
     });
     console.log(`Admin ready: ${email}`);
   } else {

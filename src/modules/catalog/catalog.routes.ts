@@ -1,7 +1,15 @@
 import { Router } from "express";
 import { z } from "zod";
 import type { Prisma } from "../../generated/prisma/client.ts";
-import { COLLECTIONS, MATERIALS, PAYMENT_METHODS, SHIPPING_METHODS } from "../../lib/catalog.ts";
+import {
+  COLLECTIONS,
+  FREE_SHIPPING_EXCLUDES,
+  FREE_SHIPPING_OVER,
+  MATERIALS,
+  PAYMENT_METHODS,
+  SHIPPING_METHODS,
+  promoPercent,
+} from "../../lib/catalog.ts";
 import { notFound } from "../../lib/http-error.ts";
 import { paystackCurrencies } from "../payments/paystack.ts";
 import { prisma } from "../../lib/prisma.ts";
@@ -17,6 +25,7 @@ catalogRouter.get("/meta", async (_req, res) => {
     collections: COLLECTIONS,
     materials: MATERIALS,
     shippingMethods: SHIPPING_METHODS,
+    freeShipping: { over: FREE_SHIPPING_OVER, excludes: FREE_SHIPPING_EXCLUDES },
     // Only what can actually be used right now, per currency.
     paymentMethods: PAYMENT_METHODS.map(({ id, label, hint, currencies }) => ({
       id,
@@ -25,6 +34,13 @@ catalogRouter.get("/meta", async (_req, res) => {
       currencies: id === "paystack" ? currencies.filter((c) => paystackCurrencies().includes(c)) : currencies,
     })).filter((m) => m.currencies.length > 0),
   });
+});
+
+/** Lets the bag check a code before checkout. The order itself re-checks it. */
+catalogRouter.get("/promo/:code", (req, res) => {
+  const percent = promoPercent(req.params.code);
+  if (percent === null) throw notFound("That code isn't valid.");
+  res.json({ code: req.params.code.trim().toUpperCase(), percent });
 });
 
 catalogRouter.get("/categories", async (_req, res) => {

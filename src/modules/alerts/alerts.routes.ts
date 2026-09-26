@@ -1,4 +1,5 @@
 import { Router } from "express";
+import rateLimit from "express-rate-limit";
 import { z } from "zod";
 import { env } from "../../config/env.ts";
 import * as alerts from "./alerts.service.ts";
@@ -11,6 +12,21 @@ const page = (title: string, body: string) => `<!doctype html><html><head><meta 
 <body style="font-family:Georgia,serif;background:#f6f1ea;color:#1c1917;display:grid;place-items:center;min-height:100vh;margin:0;padding:16px">
 <div style="max-width:420px;text-align:center"><p style="font-size:26px">${title}</p><p style="line-height:1.6">${body}</p>
 <p><a href="${env.FRONTEND_URL}" style="color:#1c1917">Back to Lui'Deo</a></p></div></body></html>`;
+
+const subscribeLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 5,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { error: { message: "Too many sign-ups from here — try again later.", code: "RATE_LIMITED" } },
+});
+
+/** Footer newsletter sign-up. */
+alertsRouter.post("/subscribe", subscribeLimiter, async (req, res) => {
+  const { email } = z.object({ email: z.email().max(254) }).parse(req.body);
+  await alerts.subscribeNewsletter(email.trim().toLowerCase());
+  res.status(201).json({ ok: true });
+});
 
 alertsRouter.get("/unsubscribe", async (req, res) => {
   const { token } = z.object({ token: z.string().min(1) }).parse(req.query);

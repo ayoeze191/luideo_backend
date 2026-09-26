@@ -1,7 +1,14 @@
 import { env } from "../../config/env.ts";
 import * as emails from "../../emails/templates.ts";
-import type { Currency, Order, User } from "../../generated/prisma/client.ts";
-import { PAYMENT_METHODS, SHIPPING_METHODS, type PaymentMethodId } from "../../lib/catalog.ts";
+import type { Currency, Order, OrderItem, User } from "../../generated/prisma/client.ts";
+import {
+  FREE_SHIPPING_EXCLUDES,
+  FREE_SHIPPING_OVER,
+  PAYMENT_METHODS,
+  SHIPPING_METHODS,
+  promoPercent,
+  type PaymentMethodId,
+} from "../../lib/catalog.ts";
 import { HttpError, badRequest } from "../../lib/http-error.ts";
 import { sendMailInBackground } from "../../lib/mailer.ts";
 import { toMinor } from "../../lib/money.ts";
@@ -22,6 +29,8 @@ export type CheckoutInput = {
   items: { productId: string; finishId: string; sizeId?: string; quantity: number }[];
   notifySimilar: boolean;
   note?: string;
+  promoCode?: string;
+  giftMessage?: string;
 };
 
 export const orderInclude = { items: true, events: true } as const;
@@ -94,8 +103,20 @@ export async function createOrder(input: CheckoutInput, user?: User) {
 
   const subtotalKobo = lines.reduce((n, l) => n + l.unitKobo * l.quantity, 0);
   const subtotalCents = lines.reduce((n, l) => n + l.unitCents * l.quantity, 0);
-  const shippingKobo = toMinor(shipping.price.ngn);
-  const shippingCents = toMinor(shipping.price.usd);
+
+  const percent = promoPercent(input.promoCode);
+  if (input.promoCode && percent === null) throw badRequest("That promo code isn't valid.", "PROMO");
+  const discountKobo = percent ? Math.round((subtotalKobo * percent) / 100) : 0;
+  const discountCents = percent ? Math.round((subtotalCents * percent) / 100) : 0;
+
+  // The threshold is judged in the currency the customer is paying in.
+  const freeShipping =
+    !FREE_SHIPPING_EXCLUDES.includes(shipping.id) &&
+    (input.currency === "NGN"
+      ? subtotalKobo >= toMinor(FREE_SHIPPING_OVER.ngn)
+      : subtotalCents >= toMinor(FREE_SHIPPING_OVER.usd));
+  const shippingKobo = freeShipping ? 0 : toMinor(shipping.price.ngn);
+  const shippingCents = freeShipping ? 0 : toMinor(shipping.price.usd);
   const etaDays = Math.max(...lines.map((l) => l.leadDays)) + shipping.transitDays;
 
   const guestToken = randomToken();
@@ -115,11 +136,15 @@ export async function createOrder(input: CheckoutInput, user?: User) {
       subtotalCents,
       shippingKobo,
       shippingCents,
-      totalKobo: subtotalKobo + shippingKobo,
-      totalCents: subtotalCents + shippingCents,
+      discountKobo,
+      discountCents,
+      totalKobo: subtotalKobo + shippingKobo - discountKobo,
+      totalCents: subtotalCents + shippingCents - discountCents,
       shippingMethod: shipping.name,
       address: input.address,
-      note: input.note,
+      note: [input.giftMessage && `Gift message: “${input.giftMessage}”`, percent && `Promo ${input.promoCode!.trim().toUpperCase()} (${percent}% off)`, input.note]
+        .filter(Boolean)
+        .join("\n") || undefined,
       etaDays,
       items: { create: lines.map(({ leadDays: _, ...l }) => l) },
       events: { create: [{ label: "Order placed" }] },
@@ -208,14 +233,20 @@ export async function markOrderPaid(reference: string, payment: { amountMinor: n
   });
   if (!claimed) return;
 
-  const totalLabel = formatPrice(expected, order.currency);
+  sendReceipt(order);
+  notifyStudio(order);
+}
+
+/** The customer's confirmation email: after payment clears, or straight away for pay on delivery. */
+export function sendReceipt(order: Order & { items: OrderItem[] }) {
   sendMailInBackground(
     emails.orderReceipt({
       reference: order.reference,
       name: order.name,
       email: order.email,
-      totalLabel,
+      totalLabel: formatPrice(order.currency === "NGN" ? order.totalKobo : order.totalCents, order.currency),
       etaDays: order.etaDays,
+      payOnDelivery: order.paymentProvider === "COD",
       lines: order.items.map((i) => ({
         name: i.name,
         detail: [i.finishLabel, i.sizeLabel].filter(Boolean).join(" · "),
@@ -223,7 +254,14 @@ export async function markOrderPaid(reference: string, payment: { amountMinor: n
       })),
     }),
   );
-  notifyStudio(order);
+}
+
+/** "Track your order" for guests: the order number plus the email it was placed with. */
+export async function findOrderByReferenceAndEmail(rawReference: string, email: string) {
+  const code = rawReference.toUpperCase().replace(/[^A-Z0-9]/g, "").replace(/^LD/, "");
+  const order = await prisma.order.findUnique({ where: { reference: `LD-${code}` }, include: orderInclude });
+  if (!order || !safeEqual(order.email, email.trim().toLowerCase())) return null;
+  return order;
 }
 
 export function notifyStudio(order: Order) {

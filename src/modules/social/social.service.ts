@@ -97,8 +97,15 @@ const TARGET_LABEL: Record<SocialTarget, string> = {
 };
 export const targetId = (t: SocialTarget) => Object.entries(TARGET_IDS).find(([, v]) => v === t)![0];
 
-/** Relative paths (e.g. /brand/coral-set.jpg) live on the storefront. */
-const absolute = (url: string) => (url.startsWith("/") ? `${env.FRONTEND_URL}${url}` : url);
+/**
+ * Relative paths (e.g. /brand/coral-set.jpg) live on the storefront, and so do
+ * bare brand-photo keys like "coral-red-set" that seeded products carry.
+ */
+const absolute = (url: string) => {
+  if (/^https?:\/\//.test(url)) return url;
+  if (url.startsWith("/")) return `${env.FRONTEND_URL}${url}`;
+  return `${env.FRONTEND_URL}/brand/${url}.jpg`;
+};
 
 export async function createPosts(input: {
   productId?: string;

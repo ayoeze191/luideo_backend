@@ -47,6 +47,9 @@ const checkoutSchema = z.object({
   /** "Email me when something similar to this comes in." */
   notifySimilar: z.boolean().default(false),
   note: z.string().trim().max(1000).optional(),
+  promoCode: z.string().trim().max(40).optional(),
+  /** Written on the card in the box. */
+  giftMessage: z.string().trim().max(300).optional(),
 });
 
 /**
@@ -58,7 +61,9 @@ ordersRouter.post("/", checkoutLimiter, async (req, res) => {
   const input = checkoutSchema.parse(req.body);
   const { order, guestToken } = await orders.createOrder(input, req.user);
   if (order.paymentProvider === "COD") {
-    orders.notifyStudio(order); // pay on delivery: nothing to wait for
+    // Pay on delivery: nothing to wait for.
+    orders.sendReceipt(order);
+    orders.notifyStudio(order);
     res.status(201).json({ order: serializeOrder(order), guestToken, paymentUrl: null });
     return;
   }
@@ -76,6 +81,33 @@ ordersRouter.post("/", checkoutLimiter, async (req, res) => {
       paymentError: "We couldn't reach the payment provider. Please try again.",
     });
   }
+});
+
+const trackLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 15,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { error: { message: "Too many tries. Please wait a few minutes and try again.", code: "RATE_LIMITED" } },
+});
+
+/**
+ * Track an order without an account. POST so the email stays out of URLs and
+ * server logs. The same answer for a wrong number or a wrong email, so it
+ * can't be used to find out which order numbers exist.
+ */
+ordersRouter.post("/track", trackLimiter, async (req, res) => {
+  const { reference, email } = z
+    .object({ reference: z.string().trim().min(3).max(40), email: z.string().trim().min(3).max(254) })
+    .parse(req.body);
+  let order = await orders.findOrderByReferenceAndEmail(reference, email);
+  if (!order) throw notFound("We couldn't find an order with that number and email. Check both and try again.");
+
+  if (order.paymentStatus === "AWAITING") {
+    await orders.reconcilePayment(order);
+    order = (await orders.findOrderByReferenceAndEmail(order.reference, order.email))!;
+  }
+  res.json({ order: serializeOrder(order) });
 });
 
 /**
