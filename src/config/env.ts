@@ -22,6 +22,8 @@ const schema = z.object({
 
   GOOGLE_CLIENT_ID: optional,
 
+  /** Resend (resend.com). When set, email goes through Resend's API instead of SMTP. */
+  RESEND_API_KEY: optional,
   SMTP_HOST: optional,
   SMTP_PORT: z.coerce.number().default(587),
   SMTP_USER: optional,

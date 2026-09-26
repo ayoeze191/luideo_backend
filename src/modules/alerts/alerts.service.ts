@@ -1,7 +1,7 @@
 import * as emails from "../../emails/templates.ts";
 import type { User } from "../../generated/prisma/client.ts";
 import { forbidden } from "../../lib/http-error.ts";
-import { sendMail } from "../../lib/mailer.ts";
+import { sendMail, sendMailInBackground } from "../../lib/mailer.ts";
 import { prisma } from "../../lib/prisma.ts";
 import { formatPrice } from "../../lib/serialize.ts";
 import { randomToken } from "../../lib/tokens.ts";
@@ -37,13 +37,28 @@ export async function subscribeGuest(email: string) {
 export async function subscribeNewsletter(email: string) {
   const categories = (await prisma.category.findMany({ select: { slug: true } })).map((c) => c.slug);
   const existing = await prisma.alertSubscription.findUnique({ where: { email } });
-  if (existing) {
-    await prisma.alertSubscription.update({
-      where: { id: existing.id },
-      data: { enabled: true, categories: [...new Set([...existing.categories, ...categories])] },
-    });
-  } else {
-    await prisma.alertSubscription.create({ data: { email, categories, unsubscribeToken: randomToken() } });
+  const sub = existing
+    ? await prisma.alertSubscription.update({
+        where: { id: existing.id },
+        data: { enabled: true, categories: [...new Set([...existing.categories, ...categories])] },
+      })
+    : await prisma.alertSubscription.create({ data: { email, categories, unsubscribeToken: randomToken() } });
+  // Welcome new sign-ups, and anyone coming back after unsubscribing — not someone already on the list.
+  if (!existing?.enabled || existing.categories.length < categories.length) {
+    sendMailInBackground(emails.newsletterWelcome(email, sub.unsubscribeToken));
+  }
+}
+
+/**
+ * A new category: whoever already follows every other category (the footer
+ * newsletter) follows this one too, so they still hear about everything.
+ */
+export async function followNewCategory(slug: string) {
+  const others = (await prisma.category.findMany({ where: { slug: { not: slug } }, select: { slug: true } })).map((c) => c.slug);
+  if (others.length === 0) return;
+  const followersOfAll = await prisma.alertSubscription.findMany({ where: { categories: { hasEvery: others } } });
+  for (const s of followersOfAll) {
+    await prisma.alertSubscription.update({ where: { id: s.id }, data: { categories: { push: slug } } });
   }
 }
 
@@ -83,6 +98,9 @@ export async function unsubscribe(token: string) {
 }
 
 /* ------------------------------------------------------------------ Fan-out */
+
+/** Resend's free plan allows 2 emails a second; stay safely under it. */
+const SEND_GAP_MS = 600;
 
 export async function notifyForNewProduct(productId: string) {
   // Claim the product atomically so a double publish can't double-send.
@@ -140,7 +158,8 @@ export async function notifyForNewProduct(productId: string) {
 
   if (alerts.length) await prisma.productAlert.createMany({ data: alerts, skipDuplicates: true });
 
-  // Emails go out one at a time: a small list, and it keeps SMTP providers happy.
+  // Emails go out one at a time, spaced out: providers like Resend cap how many
+  // can be sent per second, and anything over the cap is rejected.
   const pending = await prisma.productAlert.findMany({
     where: { productId: product.id, emailedAt: null },
     include: { subscription: true },
@@ -162,6 +181,7 @@ export async function notifyForNewProduct(productId: string) {
     } catch (err) {
       console.error(`Alert email for ${product.slug} to ${alert.subscription.email} failed:`, err);
     }
+    await new Promise((r) => setTimeout(r, SEND_GAP_MS));
   }
 
   return { matched: alerts.length };

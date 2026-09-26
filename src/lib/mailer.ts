@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import { env } from "../config/env.ts";
 
 export type Mail = {
@@ -9,22 +10,41 @@ export type Mail = {
   headers?: Record<string, string>;
 };
 
-const transport = env.SMTP_HOST
-  ? nodemailer.createTransport({
-      host: env.SMTP_HOST,
-      port: env.SMTP_PORT,
-      secure: env.SMTP_PORT === 465,
-      auth: env.SMTP_USER ? { user: env.SMTP_USER, pass: env.SMTP_PASS } : undefined,
-    })
-  : null;
+/** Resend when its key is set, otherwise SMTP when a host is set, otherwise the console. */
+const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
 
-/** Sends through SMTP, or prints to the console when SMTP isn't configured. */
+const transport =
+  !resend && env.SMTP_HOST
+    ? nodemailer.createTransport({
+        host: env.SMTP_HOST,
+        port: env.SMTP_PORT,
+        secure: env.SMTP_PORT === 465,
+        auth: env.SMTP_USER ? { user: env.SMTP_USER, pass: env.SMTP_PASS } : undefined,
+      })
+    : null;
+
 export async function sendMail(mail: Mail) {
-  if (!transport) {
-    console.log(`\n✉️  [dev email] to=${mail.to} subject="${mail.subject}"\n${mail.text}\n`);
+  if (resend) {
+    // Resend takes Reply-To as its own field rather than a raw header.
+    const { "Reply-To": replyTo, ...headers } = mail.headers ?? {};
+    const { error } = await resend.emails.send({
+      from: env.MAIL_FROM,
+      to: mail.to,
+      subject: mail.subject,
+      html: mail.html,
+      text: mail.text,
+      ...(replyTo && { replyTo }),
+      ...(Object.keys(headers).length > 0 && { headers }),
+    });
+    // The SDK reports failures in the result instead of throwing; throw so callers log them.
+    if (error) throw new Error(`Resend: ${error.name} — ${error.message}`);
     return;
   }
-  await transport.sendMail({ from: env.MAIL_FROM, ...mail });
+  if (transport) {
+    await transport.sendMail({ from: env.MAIL_FROM, ...mail });
+    return;
+  }
+  console.log(`\n✉️  [dev email] to=${mail.to} subject="${mail.subject}"\n${mail.text}\n`);
 }
 
 /** Fire-and-forget: a failed email should never fail the request that caused it. */

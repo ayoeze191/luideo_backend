@@ -9,7 +9,7 @@ import { money, toMinor } from "../../lib/money.ts";
 import { prisma } from "../../lib/prisma.ts";
 import { serializeCategory, serializeOrder, serializeProduct } from "../../lib/serialize.ts";
 import { requireAdmin } from "../../middleware/auth.ts";
-import { notifyForNewProductInBackground } from "../alerts/alerts.service.ts";
+import { followNewCategory, notifyForNewProductInBackground } from "../alerts/alerts.service.ts";
 import { markOrderPaid, orderInclude } from "../orders/orders.service.ts";
 import { socialRouter } from "../social/social.routes.ts";
 import { uploadsRouter } from "../uploads/uploads.ts";
@@ -180,6 +180,7 @@ const categorySchema = z.object({
 
 adminRouter.post("/categories", async (req, res) => {
   const category = await prisma.category.create({ data: categorySchema.parse(req.body) });
+  await followNewCategory(category.slug);
   res.status(201).json({ category: serializeCategory(category) });
 });
 

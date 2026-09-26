@@ -165,12 +165,54 @@ export function similarProductAlert(input: {
   };
 }
 
+/** Contact-form subjects that are a request for a made-to-order piece. */
+export const isCustomRequest = (subject: string) => /custom/i.test(subject);
+
 export function contactToStudio(to: string, m: { name: string; email: string; subject: string; message: string }): Mail {
   return {
     to,
-    subject: `[Contact] ${m.subject} — ${m.name}`,
+    subject: `${isCustomRequest(m.subject) ? "[Custom order request]" : "[Contact]"} ${m.subject} — ${m.name}`,
     headers: { "Reply-To": m.email },
     html: layout(p(`<b>${escape(m.name)}</b> &lt;${escape(m.email)}&gt; — ${escape(m.subject)}`) + p(escape(m.message).replace(/\n/g, "<br>"))),
     text: `${m.name} <${m.email}> — ${m.subject}\n\n${m.message}`,
+  };
+}
+
+/** Auto-reply to the customer, so they know their message (or custom request) arrived. */
+export function contactReceived(m: { name: string; email: string; subject: string; message: string }): Mail {
+  const custom = isCustomRequest(m.subject);
+  const opening = custom
+    ? "Thank you for your custom order request. We'll look at what you'd like and come back to you within one working day with ideas, a price and how long it will take."
+    : "Thank you for your message. Someone from the studio will reply within one working day.";
+  return {
+    to: m.email,
+    subject: custom ? "We've received your custom order request — Lui'Deo" : "We've received your message — Lui'Deo",
+    html: layout(
+      p(`Hello ${escape(m.name)},`) +
+        p(opening) +
+        p(`<span style="color:#78716c;font-size:14px">What you sent us (${escape(m.subject)}):</span><br>${escape(m.message).replace(/\n/g, "<br>")}`) +
+        p("If you need to add anything, just reply to this email."),
+    ),
+    text: `Hello ${m.name},\n\n${opening}\n\nWhat you sent us (${m.subject}):\n${m.message}\n\nIf you need to add anything, just reply to this email.`,
+  };
+}
+
+/** Sent when someone signs up in the footer to hear about new pieces. */
+export function newsletterWelcome(to: string, unsubscribeToken: string): Mail {
+  const unsubscribe = `${env.API_URL}/api/alerts/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}`;
+  return {
+    to,
+    subject: "You're on the list — Lui'Deo",
+    headers: {
+      "List-Unsubscribe": `<${unsubscribe}>`,
+      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+    },
+    html: layout(
+      p("Thank you for signing up.") +
+        p("We'll email you whenever a new piece is added to the shop — coral, pearl, bridal sets, earrings and more.") +
+        button(`${env.FRONTEND_URL}/shop`, "See what's in the shop now"),
+      ` <br><a href="${unsubscribe}" style="color:#78716c">Unsubscribe</a>`,
+    ),
+    text: `Thank you for signing up.\n\nWe'll email you whenever a new piece is added to the shop.\n\nShop now: ${env.FRONTEND_URL}/shop\n\nUnsubscribe: ${unsubscribe}`,
   };
 }

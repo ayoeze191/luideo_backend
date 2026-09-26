@@ -28,5 +28,6 @@ contactRouter.post("/", limiter, async (req, res) => {
 
   await prisma.contactMessage.create({ data: body });
   if (env.STUDIO_EMAIL) sendMailInBackground(emails.contactToStudio(env.STUDIO_EMAIL, body));
+  sendMailInBackground(emails.contactReceived(body));
   res.status(201).json({ ok: true });
 });
