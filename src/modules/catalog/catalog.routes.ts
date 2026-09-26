@@ -8,7 +8,6 @@ import {
   MATERIALS,
   PAYMENT_METHODS,
   SHIPPING_METHODS,
-  promoPercent,
 } from "../../lib/catalog.ts";
 import { notFound } from "../../lib/http-error.ts";
 import { paystackCurrencies } from "../payments/paystack.ts";
@@ -34,13 +33,6 @@ catalogRouter.get("/meta", async (_req, res) => {
       currencies: id === "paystack" ? currencies.filter((c) => paystackCurrencies().includes(c)) : currencies,
     })).filter((m) => m.currencies.length > 0),
   });
-});
-
-/** Lets the bag check a code before checkout. The order itself re-checks it. */
-catalogRouter.get("/promo/:code", (req, res) => {
-  const percent = promoPercent(req.params.code);
-  if (percent === null) throw notFound("That code isn't valid.");
-  res.json({ code: req.params.code.trim().toUpperCase(), percent });
 });
 
 catalogRouter.get("/categories", async (_req, res) => {

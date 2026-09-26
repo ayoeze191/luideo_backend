@@ -48,16 +48,10 @@ export function orderReceipt(order: {
   totalLabel: string;
   etaDays: number;
   lines: { name: string; detail: string; quantity: number }[];
-  /** Pay on delivery: nothing has been paid yet. */
-  payOnDelivery?: boolean;
 }): Mail {
   const link = trackLink(order.reference);
-  const opening = order.payOnDelivery
-    ? `We've received order <b>${order.reference}</b>. You'll pay ${escape(order.totalLabel)} when it's delivered. Your pieces go to the bench now and should be ready in about ${order.etaDays} days.`
-    : `We've received payment for order <b>${order.reference}</b> (${escape(order.totalLabel)}). Your pieces go to the bench now and should be ready in about ${order.etaDays} days.`;
-  const openingText = order.payOnDelivery
-    ? `We've received order ${order.reference}. You'll pay ${order.totalLabel} when it's delivered. Ready in about ${order.etaDays} days.`
-    : `We've received payment for order ${order.reference} (${order.totalLabel}). Ready in about ${order.etaDays} days.`;
+  const opening = `We've received payment for order <b>${order.reference}</b> (${escape(order.totalLabel)}). Your pieces go to the bench now and should be ready in about ${order.etaDays} days.`;
+  const openingText = `We've received payment for order ${order.reference} (${order.totalLabel}). Ready in about ${order.etaDays} days.`;
   const keep = `To track it, use your order number <b>${order.reference}</b> and this email address.`;
   const rows = order.lines
     .map((l) => `<li style="margin:6px 0">${escape(l.name)} × ${l.quantity}<br><span style="color:#78716c;font-size:14px">${escape(l.detail)}</span></li>`)
@@ -85,12 +79,59 @@ export function orderStatusUpdate(to: string, name: string, reference: string, s
   };
 }
 
-export function newOrderForStudio(to: string, reference: string, customer: string, totalLabel: string, provider: string): Mail {
+export function newOrderForStudio(
+  to: string,
+  order: {
+    reference: string;
+    customer: { name: string; email: string; phone: string };
+    address: string;
+    shippingMethod: string;
+    lines: { name: string; detail: string; quantity: number; unitLabel: string; lineLabel: string }[];
+    subtotalLabel: string;
+    shippingLabel: string;
+    totalLabel: string;
+    note?: string | null;
+  },
+): Mail {
+  const link = `${env.FRONTEND_URL}/admin/orders/${encodeURIComponent(order.reference)}`;
+  const cell = "padding:8px 0;border-bottom:1px solid #e7e5e4;vertical-align:top";
+  const rows = order.lines
+    .map(
+      (l) =>
+        `<tr><td style="${cell}">${escape(l.name)} × ${l.quantity}<br><span style="color:#78716c;font-size:13px">${escape(l.detail)} · ${escape(l.unitLabel)} each</span></td>` +
+        `<td style="${cell};text-align:right;white-space:nowrap">${escape(l.lineLabel)}</td></tr>`,
+    )
+    .join("");
+  const sum = (label: string, value: string, bold = false) =>
+    `<tr><td style="padding:4px 0${bold ? ";font-weight:bold" : ""}">${label}</td><td style="padding:4px 0;text-align:right${bold ? ";font-weight:bold" : ""}">${escape(value)}</td></tr>`;
+  const c = order.customer;
   return {
     to,
-    subject: `New order ${reference} — ${totalLabel}`,
-    html: layout(p(`<b>${reference}</b> from ${escape(customer)} — ${escape(totalLabel)} via ${provider}.`) + button(`${env.FRONTEND_URL}/admin/orders`, "Open in admin")),
-    text: `${reference} from ${customer} — ${totalLabel} via ${provider}.`,
+    subject: `Paid: order ${order.reference} — ${order.totalLabel} from ${order.customer.name}`,
+    html: layout(
+      p(`<b>${escape(c.name)}</b> has paid <b>${escape(order.totalLabel)}</b> for order <b>${order.reference}</b>.`) +
+        `<table style="width:100%;border-collapse:collapse;font-size:15px;margin:16px 0">${rows}</table>` +
+        `<table style="width:100%;border-collapse:collapse;font-size:15px">${sum("Subtotal", order.subtotalLabel)}${sum(`Delivery (${escape(order.shippingMethod)})`, order.shippingLabel)}${sum("Total paid", order.totalLabel, true)}</table>` +
+        p(`<b>Customer</b><br>${escape(c.name)}<br><a href="mailto:${escape(c.email)}">${escape(c.email)}</a><br>${escape(c.phone)}`) +
+        p(`<b>Deliver to</b><br>${escape(order.address)}`) +
+        (order.note ? p(`<b>Note</b><br>${escape(order.note).replace(/\n/g, "<br>")}`) : "") +
+        button(link, "Open the order"),
+    ),
+    text: [
+      `${c.name} has paid ${order.totalLabel} for order ${order.reference}.`,
+      "",
+      ...order.lines.map((l) => `- ${l.name} × ${l.quantity} (${l.detail}) — ${l.unitLabel} each, ${l.lineLabel}`),
+      "",
+      `Subtotal: ${order.subtotalLabel}`,
+      `Delivery (${order.shippingMethod}): ${order.shippingLabel}`,
+      `Total paid: ${order.totalLabel}`,
+      "",
+      `Customer: ${c.name}, ${c.email}, ${c.phone}`,
+      `Deliver to: ${order.address}`,
+      ...(order.note ? ["", `Note: ${order.note}`] : []),
+      "",
+      `Open the order: ${link}`,
+    ].join("\n"),
   };
 }
 

@@ -43,6 +43,7 @@ const productSchema = z.object({
   collection: z.enum(COLLECTIONS),
   material: z.enum(MATERIALS),
   price: moneyInput,
+  /** The original price, shown struck through, when the piece is on discount. `price` is what's charged. */
   compareAt: moneyInput.nullable().optional(),
   photo: z.string().trim().max(200).nullable().optional(),
   /** Defaults to a single "As pictured" option. */
@@ -61,6 +62,13 @@ const productSchema = z.object({
 });
 
 type ProductInput = z.infer<typeof productSchema>;
+
+/** A discount only makes sense if the original price is higher than what's charged, in both currencies. */
+function assertDiscount(price: { ngn: number; usd: number }, compareAt: { ngn: number; usd: number } | null | undefined) {
+  if (compareAt && (compareAt.ngn <= price.ngn || compareAt.usd <= price.usd)) {
+    throw badRequest("The discounted price must be lower than the original price, in both ₦ and $.", "DISCOUNT");
+  }
+}
 
 /** API shape → columns. Only fields present in the input are returned, so it serves PATCH too. */
 function productColumns<T extends Partial<ProductInput>>(input: T) {
@@ -124,6 +132,7 @@ adminRouter.get("/products/:id", async (req, res) => {
 adminRouter.post("/products", async (req, res) => {
   const input = productSchema.parse(req.body);
   await assertCategory(input.category);
+  assertDiscount(input.price, input.compareAt);
   const product = await prisma.product.create({
     data: {
       ...productColumns(input),
@@ -141,6 +150,12 @@ adminRouter.post("/products", async (req, res) => {
 adminRouter.patch("/products/:id", async (req, res) => {
   const input = productSchema.partial().parse(req.body);
   await assertCategory(input.category);
+  if (input.price || input.compareAt) {
+    const current = await prisma.product.findUnique({ where: { id: req.params.id } });
+    if (!current) throw notFound();
+    const compareAt = input.compareAt !== undefined ? input.compareAt : serializeProduct(current).compareAt;
+    assertDiscount(input.price ?? serializeProduct(current).price, compareAt);
+  }
   const product = await prisma.product.update({ where: { id: req.params.id }, data: productColumns(input) });
   // First publish of a draft sends alerts; later edits don't (alertsSentAt guards it).
   if (product.published && !product.alertsSentAt) notifyForNewProductInBackground(product.id);

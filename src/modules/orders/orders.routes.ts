@@ -47,26 +47,18 @@ const checkoutSchema = z.object({
   /** "Email me when something similar to this comes in." */
   notifySimilar: z.boolean().default(false),
   note: z.string().trim().max(1000).optional(),
-  promoCode: z.string().trim().max(40).optional(),
   /** Written on the card in the box. */
   giftMessage: z.string().trim().max(300).optional(),
 });
 
 /**
- * Creates the order and, for card/transfer payments, returns the provider URL
- * to send the customer to. Keep `guestToken` (e.g. in sessionStorage): it's
+ * Creates the order and returns the Paystack URL to send the customer to.
+ * Nothing is made or emailed about until that payment clears. Keep `guestToken` (e.g. in sessionStorage): it's
  * what lets a guest open their confirmation page.
  */
 ordersRouter.post("/", checkoutLimiter, async (req, res) => {
   const input = checkoutSchema.parse(req.body);
   const { order, guestToken } = await orders.createOrder(input, req.user);
-  if (order.paymentProvider === "COD") {
-    // Pay on delivery: nothing to wait for.
-    orders.sendReceipt(order);
-    orders.notifyStudio(order);
-    res.status(201).json({ order: serializeOrder(order), guestToken, paymentUrl: null });
-    return;
-  }
   // If the provider hiccups, the order still exists — return it with the error
   // so the page can offer "try again" via POST /:reference/pay.
   try {

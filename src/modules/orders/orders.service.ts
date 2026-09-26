@@ -6,7 +6,6 @@ import {
   FREE_SHIPPING_OVER,
   PAYMENT_METHODS,
   SHIPPING_METHODS,
-  promoPercent,
   type PaymentMethodId,
 } from "../../lib/catalog.ts";
 import { HttpError, badRequest } from "../../lib/http-error.ts";
@@ -29,7 +28,6 @@ export type CheckoutInput = {
   items: { productId: string; finishId: string; sizeId?: string; quantity: number }[];
   notifySimilar: boolean;
   note?: string;
-  promoCode?: string;
   giftMessage?: string;
 };
 
@@ -46,9 +44,6 @@ export async function createOrder(input: CheckoutInput, user?: User) {
   }
   if (method.provider === "PAYSTACK" && !paystackCurrencies().includes(input.currency)) {
     throw new HttpError(503, `Online payment in ${input.currency} isn't available right now.`, "PAYMENT_DISABLED");
-  }
-  if (method.id === "cod" && !/lagos/i.test(`${input.address.state} ${input.address.city}`)) {
-    throw badRequest("Pay on delivery is only available in Lagos.", "COD_REGION");
   }
 
   const shipping = SHIPPING_METHODS.find((s) => s.id === input.shippingMethodId);
@@ -104,11 +99,6 @@ export async function createOrder(input: CheckoutInput, user?: User) {
   const subtotalKobo = lines.reduce((n, l) => n + l.unitKobo * l.quantity, 0);
   const subtotalCents = lines.reduce((n, l) => n + l.unitCents * l.quantity, 0);
 
-  const percent = promoPercent(input.promoCode);
-  if (input.promoCode && percent === null) throw badRequest("That promo code isn't valid.", "PROMO");
-  const discountKobo = percent ? Math.round((subtotalKobo * percent) / 100) : 0;
-  const discountCents = percent ? Math.round((subtotalCents * percent) / 100) : 0;
-
   // The threshold is judged in the currency the customer is paying in.
   const freeShipping =
     !FREE_SHIPPING_EXCLUDES.includes(shipping.id) &&
@@ -136,13 +126,11 @@ export async function createOrder(input: CheckoutInput, user?: User) {
       subtotalCents,
       shippingKobo,
       shippingCents,
-      discountKobo,
-      discountCents,
-      totalKobo: subtotalKobo + shippingKobo - discountKobo,
-      totalCents: subtotalCents + shippingCents - discountCents,
+      totalKobo: subtotalKobo + shippingKobo,
+      totalCents: subtotalCents + shippingCents,
       shippingMethod: shipping.name,
       address: input.address,
-      note: [input.giftMessage && `Gift message: “${input.giftMessage}”`, percent && `Promo ${input.promoCode!.trim().toUpperCase()} (${percent}% off)`, input.note]
+      note: [input.giftMessage && `Gift message: “${input.giftMessage}”`, input.note]
         .filter(Boolean)
         .join("\n") || undefined,
       etaDays,
@@ -237,7 +225,7 @@ export async function markOrderPaid(reference: string, payment: { amountMinor: n
   notifyStudio(order);
 }
 
-/** The customer's confirmation email: after payment clears, or straight away for pay on delivery. */
+/** The customer's confirmation email, sent once payment clears. */
 export function sendReceipt(order: Order & { items: OrderItem[] }) {
   sendMailInBackground(
     emails.orderReceipt({
@@ -246,7 +234,6 @@ export function sendReceipt(order: Order & { items: OrderItem[] }) {
       email: order.email,
       totalLabel: formatPrice(order.currency === "NGN" ? order.totalKobo : order.totalCents, order.currency),
       etaDays: order.etaDays,
-      payOnDelivery: order.paymentProvider === "COD",
       lines: order.items.map((i) => ({
         name: i.name,
         detail: [i.finishLabel, i.sizeLabel].filter(Boolean).join(" · "),
@@ -264,10 +251,30 @@ export async function findOrderByReferenceAndEmail(rawReference: string, email: 
   return order;
 }
 
-export function notifyStudio(order: Order) {
+/** Tells the studio a paid order is in: who bought what, and where it's going. */
+export function notifyStudio(order: Order & { items: OrderItem[] }) {
   if (!env.STUDIO_EMAIL) return;
-  const total = formatPrice(order.currency === "NGN" ? order.totalKobo : order.totalCents, order.currency);
-  sendMailInBackground(emails.newOrderForStudio(env.STUDIO_EMAIL, order.reference, order.name, total, order.paymentProvider));
+  const price = (kobo: number, cents: number) => formatPrice(order.currency === "NGN" ? kobo : cents, order.currency);
+  const a = order.address as { line1: string; city: string; state: string; country: string; postcode?: string };
+  sendMailInBackground(
+    emails.newOrderForStudio(env.STUDIO_EMAIL, {
+      reference: order.reference,
+      customer: { name: order.name, email: order.email, phone: order.phone },
+      address: [a.line1, a.city, a.state, a.postcode, a.country].filter(Boolean).join(", "),
+      shippingMethod: order.shippingMethod,
+      lines: order.items.map((i) => ({
+        name: i.name,
+        detail: [i.finishLabel, i.sizeLabel].filter(Boolean).join(" · "),
+        quantity: i.quantity,
+        unitLabel: price(i.unitKobo, i.unitCents),
+        lineLabel: price(i.unitKobo * i.quantity, i.unitCents * i.quantity),
+      })),
+      subtotalLabel: price(order.subtotalKobo, order.subtotalCents),
+      shippingLabel: order.shippingKobo || order.shippingCents ? price(order.shippingKobo, order.shippingCents) : "Free",
+      totalLabel: price(order.totalKobo, order.totalCents),
+      note: order.note,
+    }),
+  );
 }
 
 export async function findOrderForViewer(reference: string, opts: { user?: User; guestToken?: string }) {

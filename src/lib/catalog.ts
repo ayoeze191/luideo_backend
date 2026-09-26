@@ -38,16 +38,9 @@ export const SHIPPING_METHODS: ShippingMethod[] = [
 export const FREE_SHIPPING_OVER = { ngn: 250000, usd: 330 };
 export const FREE_SHIPPING_EXCLUDES = ["dhl-express"];
 
-/** Percentage off the subtotal. Codes are matched case-insensitively. */
-export const PROMO_CODES: Record<string, number> = { LUIDEO10: 10, IYAWO15: 15 };
-
-export function promoPercent(code: string | undefined) {
-  return code ? (PROMO_CODES[code.trim().toUpperCase()] ?? null) : null;
-}
-
+/** Every order is paid online before it's made. (COD stays in the schema only for old orders.) */
 export const PAYMENT_METHODS = [
   { id: "paystack", provider: "PAYSTACK", label: "Pay with Paystack", hint: "Card, bank transfer or USSD", currencies: ["NGN", "USD"] },
-  { id: "cod", provider: "COD", label: "Pay on delivery", hint: "Lagos only", currencies: ["NGN"] },
 ] as const satisfies readonly { id: string; provider: string; label: string; hint: string; currencies: readonly Currency[] }[];
 
 export type PaymentMethodId = (typeof PAYMENT_METHODS)[number]["id"];
