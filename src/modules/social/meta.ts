@@ -93,11 +93,36 @@ export type MetaPage = {
   instagram_business_account?: { id: string; username?: string };
 };
 
+const PAGE_FIELDS = "id,name,access_token,instagram_business_account{id,username}";
+
+/**
+ * Pages the person can post to. /me/accounts lists Pages they hold a role on
+ * directly; Pages owned through a Business portfolio only show up under that
+ * business, so those are gathered too.
+ */
 export async function listPages(userToken: string) {
-  const res = await graphGet<{ data: MetaPage[] }>("/me/accounts", {
-    access_token: userToken,
-    fields: "id,name,access_token,instagram_business_account{id,username}",
-    limit: "100",
-  });
-  return res.data;
+  const direct = await graphGet<{ data: MetaPage[] }>("/me/accounts", { access_token: userToken, fields: PAGE_FIELDS, limit: "100" });
+  const byId = new Map(direct.data.map((p) => [p.id, p]));
+
+  try {
+    const businesses = await graphGet<{ data: { id: string }[] }>("/me/businesses", { access_token: userToken, fields: "id", limit: "50" });
+    for (const b of businesses.data) {
+      for (const edge of ["owned_pages", "client_pages"]) {
+        const pages = await graphGet<{ data: MetaPage[] }>(`/${b.id}/${edge}`, { access_token: userToken, fields: PAGE_FIELDS, limit: "100" }).catch(
+          () => ({ data: [] as MetaPage[] }),
+        );
+        // Without a Page token there's nothing we can post with.
+        for (const p of pages.data) if (p.access_token && !byId.has(p.id)) byId.set(p.id, p);
+      }
+    }
+  } catch {
+    /* no business_management permission, or no portfolios: the direct list is all there is */
+  }
+  return [...byId.values()];
+}
+
+/** The permissions the person actually granted — for explaining a failed connection. */
+export async function grantedPermissions(userToken: string) {
+  const res = await graphGet<{ data: { permission: string; status: string }[] }>("/me/permissions", { access_token: userToken });
+  return res.data.filter((p) => p.status === "granted").map((p) => p.permission);
 }

@@ -12,6 +12,7 @@ import { HttpError, badRequest } from "../../lib/http-error.ts";
 import { sendMailInBackground } from "../../lib/mailer.ts";
 import { toMinor } from "../../lib/money.ts";
 import { prisma } from "../../lib/prisma.ts";
+import { syncSalesInBackground } from "../../lib/sales.ts";
 import { formatPrice, type Variant } from "../../lib/serialize.ts";
 import { hashToken, orderReference, randomToken, safeEqual } from "../../lib/tokens.ts";
 import { subscribeGuest, setPreferences } from "../alerts/alerts.service.ts";
@@ -221,6 +222,7 @@ export async function markOrderPaid(reference: string, payment: { amountMinor: n
   });
   if (!claimed) return;
 
+  syncSalesInBackground();
   sendReceipt(order);
   notifyStudio(order);
 }

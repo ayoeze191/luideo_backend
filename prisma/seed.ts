@@ -47,14 +47,15 @@ async function main() {
       description: p.description,
       details: p.details,
       care: p.care,
-      // "Last one" is derived from stock at read time, not stored.
-      badge: p.badge === "Last one" ? null : (p.badge ?? null),
+      // Card labels are worked out from stock, real sales and date added (lib/sales.ts, serialize.ts).
+      badge: null,
       rating: p.rating,
       reviews: p.reviews,
       stock: p.stock,
       sku: p.sku,
       madeToOrderDays: p.madeToOrderDays,
-      unitsSold: p.unitsSold,
+      // Real sales are counted from paid orders (lib/sales.ts), never seeded.
+      unitsSold: 0,
       createdAt: new Date(p.createdAt),
       // Seeded pieces are the existing catalogue — don't email anyone about them.
       alertsSentAt: new Date(),

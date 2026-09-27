@@ -2,11 +2,12 @@ import { Router } from "express";
 import { z } from "zod";
 import * as emails from "../../emails/templates.ts";
 import { Prisma, type OrderStatus } from "../../generated/prisma/client.ts";
-import { BADGES, COLLECTIONS, MATERIALS, ORDER_STATUS_LABEL } from "../../lib/catalog.ts";
+import { COLLECTIONS, MATERIALS, ORDER_STATUS_LABEL } from "../../lib/catalog.ts";
 import { badRequest, notFound } from "../../lib/http-error.ts";
 import { sendMailInBackground } from "../../lib/mailer.ts";
 import { money, toMinor } from "../../lib/money.ts";
 import { prisma } from "../../lib/prisma.ts";
+import { syncSalesInBackground } from "../../lib/sales.ts";
 import { serializeCategory, serializeOrder, serializeProduct } from "../../lib/serialize.ts";
 import { requireAdmin } from "../../middleware/auth.ts";
 import { followNewCategory, notifyForNewProductInBackground } from "../alerts/alerts.service.ts";
@@ -53,7 +54,6 @@ const productSchema = z.object({
   description: z.string().trim().max(5000).default(""),
   details: z.array(z.string().trim().max(300)).max(30).default([]),
   care: z.array(z.string().trim().max(300)).max(30).default([]),
-  badge: z.enum(BADGES).nullable().optional(),
   stock: z.number().int().min(0).default(0),
   /** Generated (LD-COR-019) when omitted. */
   sku: z.string().trim().min(1).max(60).optional(),
@@ -284,6 +284,8 @@ adminRouter.patch("/orders/:id", async (req, res) => {
       }),
       prisma.orderEvent.create({ data: { orderId: order.id, label: ORDER_STATUS_LABEL[body.status] } }),
     ]);
+    // Cancelled and refunded orders stop counting towards sales and bestsellers.
+    syncSalesInBackground();
     if (body.notifyCustomer && ["SHIPPED", "DELIVERED", "REFUNDED", "CANCELLED"].includes(body.status)) {
       sendMailInBackground(emails.orderStatusUpdate(order.email, order.name, order.reference, ORDER_STATUS_LABEL[body.status]));
     }

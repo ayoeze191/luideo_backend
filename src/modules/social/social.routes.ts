@@ -5,7 +5,7 @@ import { notFound } from "../../lib/http-error.ts";
 import { prisma } from "../../lib/prisma.ts";
 import { safeEqual, signTicket, verifyTicket } from "../../lib/tokens.ts";
 import { currentUser } from "../../middleware/auth.ts";
-import { exchangeCode, loginDialogUrl } from "./meta.ts";
+import { META_SCOPES, exchangeCode, grantedPermissions, loginDialogUrl } from "./meta.ts";
 import * as social from "./social.service.ts";
 
 /** Mounted under /api/admin/social, so every route here is admin-only. */
@@ -142,7 +142,15 @@ socialOAuthRouter.get("/callback", async (req, res) => {
   try {
     const { token, expiresAt } = await exchangeCode(code);
     const pages = await social.saveUserToken(token, expiresAt, adminId);
-    if (pages === 0) return res.redirect(back("error=This+Facebook+account+doesn't+manage+any+Pages."));
+    if (pages === 0) {
+      // Say why: usually no Page was ticked on Facebook's "choose Pages" step, or a permission was left off.
+      const granted = await grantedPermissions(token).catch(() => [] as string[]);
+      const missing = META_SCOPES.filter((s) => !granted.includes(s));
+      const why = missing.length
+        ? `Facebook didn't grant: ${missing.join(", ")}. Add them to the login configuration, then connect again.`
+        : "Facebook didn't share any Pages. Connect again and tick your Page (and its Instagram) on the \"choose Pages\" step.";
+      return res.redirect(back(`error=${encodeURIComponent(why)}`));
+    }
     res.redirect(back(pages === 1 ? "connected=1" : "choose=1"));
   } catch (err) {
     console.error("Meta OAuth callback failed:", err);

@@ -7,6 +7,21 @@ import { money, optionalMoney } from "./money.ts";
 
 export type Variant = { id: string; label: string; swatch?: string; inStock: boolean };
 
+/** Pieces added within this many days carry the "New" label. */
+const NEW_FOR_DAYS = 30;
+
+/**
+ * The card label, worked out from real data rather than set by hand:
+ * scarcity first, then sales (see lib/sales.ts), then how recently it was added.
+ */
+function productBadge(p: Product) {
+  if (p.stock === 1) return "Last one";
+  if (p.stock > 1 && p.stock <= 3) return "Limited";
+  if (p.badge === "Bestseller") return "Bestseller";
+  if (Date.now() - p.createdAt.getTime() < NEW_FOR_DAYS * 24 * 60 * 60 * 1000) return "New";
+  return undefined;
+}
+
 export function serializeProduct(p: Product) {
   return {
     id: p.id,
@@ -25,7 +40,7 @@ export function serializeProduct(p: Product) {
     description: p.description,
     details: p.details,
     care: p.care,
-    badge: p.stock === 1 ? "Last one" : (p.badge ?? undefined),
+    badge: productBadge(p),
     rating: p.rating,
     reviews: p.reviews,
     stock: p.stock,
