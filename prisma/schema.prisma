@@ -306,25 +306,25 @@ model ContactMessage {
 
 /// The one connected Facebook Page (and the Instagram account linked to it).
 /// Tokens are encrypted at rest — see src/lib/crypto.ts.
+/// One row per connected account: id is "instagram" or "threads". Tokens are
+/// long-lived (60 days) and refreshed automatically before they run out.
 model SocialConnection {
-  /// Always "meta" — a single row.
-  id                 String    @id
-  /// Long-lived user token; only kept while a Page still needs choosing.
-  userTokenEnc       String?
-  userTokenExpiresAt DateTime?
-  pageId             String?
-  pageName           String?
-  pageTokenEnc       String?
-  igUserId           String?
-  igUsername         String?
-  connectedById      String?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  id             String    @id
+  /// The account's id on that platform (what posts are published under).
+  accountId      String
+  username       String?
+  tokenEnc       String
+  tokenExpiresAt DateTime?
+  connectedById  String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 }
 
 enum SocialTarget {
   IG_FEED
   IG_STORY
+  THREADS
+  /// No longer offered; kept so older posts still load.
   FB_FEED
   FB_STORY
 }
@@ -342,7 +342,7 @@ model SocialPost {
   product     Product?         @relation(fields: [productId], references: [id], onDelete: SetNull)
   target      SocialTarget
   caption     String           @default("")
-  /// Must be publicly reachable — Meta downloads it.
+  /// Must be publicly reachable — Instagram and Threads download it.
   imageUrl    String
   link        String?
   status      SocialPostStatus

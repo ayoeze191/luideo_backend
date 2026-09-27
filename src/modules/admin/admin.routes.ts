@@ -162,9 +162,13 @@ adminRouter.patch("/products/:id", async (req, res) => {
   res.json({ product: serializeProduct(product) });
 });
 
-/** Archive rather than delete — past orders still point at it. */
+/**
+ * Deletes a piece for good. Past orders keep their own copy of its name and
+ * price (the link just goes), and wishlists and alerts for it are cleared.
+ * To take a piece off the shop without losing it, hide it instead.
+ */
 adminRouter.delete("/products/:id", async (req, res) => {
-  await prisma.product.update({ where: { id: req.params.id }, data: { published: false } });
+  await prisma.product.delete({ where: { id: req.params.id } });
   res.status(204).end();
 });
 

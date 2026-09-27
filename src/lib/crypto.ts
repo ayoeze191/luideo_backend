@@ -3,7 +3,7 @@ import { env } from "../config/env.ts";
 
 /* AES-256-GCM for secrets we must be able to read back (Meta page tokens).
  * The key is derived from SESSION_SECRET, so rotating that secret means
- * reconnecting Facebook — which is the right outcome after a leak anyway. */
+ * reconnecting Instagram and Threads — which is the right outcome after a leak anyway. */
 
 const key = createHash("sha256").update(`luideo:secrets:${env.SESSION_SECRET}`).digest();
 

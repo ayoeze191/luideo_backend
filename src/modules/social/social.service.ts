@@ -1,84 +1,81 @@
 import { env } from "../../config/env.ts";
-import type { SocialPost, SocialTarget } from "../../generated/prisma/client.ts";
+import type { SocialConnection, SocialPost, SocialTarget } from "../../generated/prisma/client.ts";
 import { decrypt, encrypt } from "../../lib/crypto.ts";
 import { badRequest, HttpError } from "../../lib/http-error.ts";
 import { prisma } from "../../lib/prisma.ts";
 import { instagramImageUrl } from "../uploads/uploads.ts";
-import { MetaError, graphGet, graphPost, listPages, metaConfigured, type MetaPage } from "./meta.ts";
+import {
+  PROVIDER_NAME,
+  PlatformError,
+  THREADS_MAX_TEXT,
+  isConfigured,
+  publishInstagram,
+  publishThreads,
+  refreshToken,
+  whoAmI,
+  type Provider,
+} from "./platforms.ts";
 
-const ROW = "meta";
+export const PROVIDERS: Provider[] = ["instagram", "threads"];
 
 /* ------------------------------------------------------------ Connection */
 
+/** One entry per platform: set up on the server? connected, as whom? anything wrong? */
 export async function connectionStatus() {
-  const row = await prisma.socialConnection.findUnique({ where: { id: ROW } });
-  const base = { configured: metaConfigured(), needsPageChoice: Boolean(row?.userTokenEnc && !row.pageId) };
+  const rows = await prisma.socialConnection.findMany();
+  const entries = await Promise.all(
+    PROVIDERS.map(async (p) => {
+      const row = rows.find((r) => r.id === p);
+      if (!row) return [p, { configured: isConfigured(p), account: null, problem: null }] as const;
+      // A cheap live check, so a revoked login shows up here rather than at publish time.
+      let problem: string | null = null;
+      try {
+        await whoAmI(p, decrypt(row.tokenEnc));
+      } catch (err) {
+        problem =
+          err instanceof PlatformError && err.isAuth
+            ? `${PROVIDER_NAME[p]} access has expired or was removed — connect again.`
+            : `Couldn't reach ${PROVIDER_NAME[p]} just now.`;
+      }
+      return [p, { configured: isConfigured(p), account: { id: row.accountId, username: row.username }, problem }] as const;
+    }),
+  );
+  return Object.fromEntries(entries) as Record<
+    Provider,
+    { configured: boolean; account: { id: string; username: string | null } | null; problem: string | null }
+  >;
+}
 
-  if (!row?.pageId || !row.pageTokenEnc) {
-    return { ...base, facebook: null, instagram: null, problem: null as string | null };
+/** After logging in: store the (encrypted) token and whose account it is. */
+export async function saveConnection(p: Provider, token: string, expiresAt: Date | null, adminId: string) {
+  const { accountId, username } = await whoAmI(p, token);
+  const data = { accountId, username, tokenEnc: encrypt(token), tokenExpiresAt: expiresAt, connectedById: adminId };
+  await prisma.socialConnection.upsert({ where: { id: p }, create: { id: p, ...data }, update: data });
+  return username;
+}
+
+export async function disconnect(p: Provider) {
+  await prisma.socialConnection.deleteMany({ where: { id: p } });
+}
+
+/**
+ * Long-lived tokens last 60 days and can be renewed while still valid (and at
+ * least a day old). Renew anything with under three weeks left, so a quiet
+ * month never logs her out.
+ */
+async function refreshExpiringTokens() {
+  const soon = new Date(Date.now() + 21 * 24 * 60 * 60 * 1000);
+  const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const due = await prisma.socialConnection.findMany({ where: { tokenExpiresAt: { lte: soon }, updatedAt: { lte: dayAgo } } });
+  for (const row of due) {
+    try {
+      const fresh = await refreshToken(row.id as Provider, decrypt(row.tokenEnc));
+      await prisma.socialConnection.update({ where: { id: row.id }, data: { tokenEnc: encrypt(fresh.token), tokenExpiresAt: fresh.expiresAt } });
+      console.log(`Renewed the ${row.id} login, now valid until ${fresh.expiresAt?.toISOString() ?? "?"}`);
+    } catch (err) {
+      console.error(`Couldn't renew the ${row.id} login:`, err instanceof Error ? err.message : err);
+    }
   }
-
-  // A cheap live check, so a revoked token shows up here rather than at publish time.
-  let problem: string | null = null;
-  try {
-    await graphGet(`/${row.pageId}`, { fields: "id", access_token: decrypt(row.pageTokenEnc) });
-  } catch (err) {
-    problem = err instanceof MetaError && err.isAuth ? "Facebook access has expired or was revoked — reconnect." : "Couldn't reach Facebook just now.";
-  }
-
-  return {
-    ...base,
-    facebook: { pageId: row.pageId, name: row.pageName },
-    instagram: row.igUserId ? { userId: row.igUserId, username: row.igUsername } : null,
-    problem,
-  };
-}
-
-/** After OAuth: remember the user token, and pick the Page straight away if there's only one. */
-export async function saveUserToken(userToken: string, expiresAt: Date | null, adminId: string) {
-  const pages = await listPages(userToken);
-  const data = { userTokenEnc: encrypt(userToken), userTokenExpiresAt: expiresAt, connectedById: adminId };
-  await prisma.socialConnection.upsert({
-    where: { id: ROW },
-    create: { id: ROW, ...data },
-    update: { ...data, pageId: null, pageName: null, pageTokenEnc: null, igUserId: null, igUsername: null },
-  });
-  if (pages.length === 1) await usePage(pages[0]!);
-  return pages.length;
-}
-
-export async function pagesToChoose() {
-  const row = await prisma.socialConnection.findUnique({ where: { id: ROW } });
-  if (!row?.userTokenEnc) throw badRequest("Connect Facebook first.", "NOT_CONNECTED");
-  const pages = await listPages(decrypt(row.userTokenEnc));
-  return pages.map((p) => ({ id: p.id, name: p.name, instagram: p.instagram_business_account?.username ?? null }));
-}
-
-export async function choosePage(pageId: string) {
-  const row = await prisma.socialConnection.findUnique({ where: { id: ROW } });
-  if (!row?.userTokenEnc) throw badRequest("Connect Facebook first.", "NOT_CONNECTED");
-  const page = (await listPages(decrypt(row.userTokenEnc))).find((p) => p.id === pageId);
-  if (!page) throw badRequest("That Page isn't available on this Facebook account.", "PAGE");
-  await usePage(page);
-}
-
-async function usePage(page: MetaPage) {
-  await prisma.socialConnection.update({
-    where: { id: ROW },
-    data: {
-      pageId: page.id,
-      pageName: page.name,
-      pageTokenEnc: encrypt(page.access_token),
-      igUserId: page.instagram_business_account?.id ?? null,
-      igUsername: page.instagram_business_account?.username ?? null,
-      // The page token is all we need from here on.
-      userTokenEnc: null,
-    },
-  });
-}
-
-export async function disconnect() {
-  await prisma.socialConnection.deleteMany({ where: { id: ROW } });
 }
 
 /* ------------------------------------------------------------ Publishing */
@@ -86,16 +83,17 @@ export async function disconnect() {
 export const TARGET_IDS: Record<string, SocialTarget> = {
   "ig-feed": "IG_FEED",
   "ig-story": "IG_STORY",
-  "fb-feed": "FB_FEED",
-  "fb-story": "FB_STORY",
+  threads: "THREADS",
 };
 const TARGET_LABEL: Record<SocialTarget, string> = {
   IG_FEED: "Instagram feed",
   IG_STORY: "Instagram story",
+  THREADS: "Threads",
   FB_FEED: "Facebook page",
   FB_STORY: "Facebook story",
 };
-export const targetId = (t: SocialTarget) => Object.entries(TARGET_IDS).find(([, v]) => v === t)![0];
+const TARGET_PROVIDER: Partial<Record<SocialTarget, Provider>> = { IG_FEED: "instagram", IG_STORY: "instagram", THREADS: "threads" };
+export const targetId = (t: SocialTarget) => Object.entries(TARGET_IDS).find(([, v]) => v === t)?.[0] ?? t.toLowerCase();
 
 /**
  * Relative paths (e.g. /brand/coral-set.jpg) live on the storefront, and so do
@@ -107,6 +105,14 @@ const absolute = (url: string) => {
   return `${env.FRONTEND_URL}/brand/${url}.jpg`;
 };
 
+/** Threads: the caption, trimmed to fit, with the product link on the end (Instagram captions can't carry links). */
+function threadsText(caption: string, link: string | null) {
+  const tail = link ? `\n\n${link}` : "";
+  const room = THREADS_MAX_TEXT - tail.length;
+  const body = caption.length > room ? `${caption.slice(0, room - 1).trimEnd()}…` : caption;
+  return `${body}${tail}`.trim();
+}
+
 export async function createPosts(input: {
   productId?: string;
   imageUrl: string;
@@ -117,7 +123,7 @@ export async function createPosts(input: {
 }) {
   const imageUrl = absolute(input.imageUrl);
   if (/^https?:\/\/(localhost|127\.|0\.0\.0\.0)/.test(imageUrl)) {
-    throw badRequest("Instagram and Facebook can't download images from localhost. Use a public URL (deploy, or a tunnel like ngrok).", "IMAGE_NOT_PUBLIC");
+    throw badRequest("Instagram and Threads can't download images from localhost. Use a public URL (deploy, or a tunnel like ngrok).", "IMAGE_NOT_PUBLIC");
   }
 
   const posts = await prisma.$transaction(
@@ -152,23 +158,19 @@ export async function retry(postId: string) {
 
 async function publish(post: SocialPost): Promise<SocialPost> {
   try {
-    const conn = await prisma.socialConnection.findUnique({ where: { id: ROW } });
-    if (!conn?.pageId || !conn.pageTokenEnc) throw new HttpError(400, "Facebook isn't connected.", "NOT_CONNECTED");
-    const token = decrypt(conn.pageTokenEnc);
+    const provider = TARGET_PROVIDER[post.target];
+    if (!provider) throw new HttpError(400, "Facebook posting has been removed.", "UNSUPPORTED");
+    const conn: SocialConnection | null = await prisma.socialConnection.findUnique({ where: { id: provider } });
+    if (!conn) throw new HttpError(400, `${PROVIDER_NAME[provider]} isn't connected.`, "NOT_CONNECTED");
+    const token = decrypt(conn.tokenEnc);
+    // Both accept JPEG; Cloudinary converts on the fly when the upload was something else.
+    const imageUrl = instagramImageUrl(post.imageUrl);
 
-    let result: { externalId: string; permalink?: string };
-    switch (post.target) {
-      case "FB_FEED":
-        result = await fbFeed(conn.pageId, token, post);
-        break;
-      case "FB_STORY":
-        result = await fbStory(conn.pageId, token, post);
-        break;
-      default:
-        if (!conn.igUserId) throw new HttpError(400, "No Instagram business account is linked to this Facebook Page.", "NO_INSTAGRAM");
-        result = await instagram(conn.igUserId, token, post);
-        break;
-    }
+    const result =
+      provider === "threads"
+        ? await publishThreads(conn.accountId, token, { imageUrl, text: threadsText(post.caption, post.link) })
+        : await publishInstagram(conn.accountId, token, { imageUrl, caption: post.caption, story: post.target === "IG_STORY" });
+
     return prisma.socialPost.update({
       where: { id: post.id },
       data: { status: "POSTED", postedAt: new Date(), externalId: result.externalId, permalink: result.permalink, error: null },
@@ -178,43 +180,6 @@ async function publish(post: SocialPost): Promise<SocialPost> {
     console.error(`Social post ${post.id} (${post.target}) failed:`, message);
     return prisma.socialPost.update({ where: { id: post.id }, data: { status: "FAILED", error: message.slice(0, 500) } });
   }
-}
-
-async function fbFeed(pageId: string, token: string, post: SocialPost) {
-  const message = [post.caption, post.link].filter(Boolean).join("\n\n");
-  const res = await graphPost<{ id: string; post_id?: string }>(`/${pageId}/photos`, { url: post.imageUrl, caption: message, access_token: token });
-  const id = res.post_id ?? res.id;
-  return { externalId: id, permalink: `https://www.facebook.com/${id}` };
-}
-
-async function fbStory(pageId: string, token: string, post: SocialPost) {
-  // Stories take an unpublished photo that's already uploaded to the Page.
-  const photo = await graphPost<{ id: string }>(`/${pageId}/photos`, { url: post.imageUrl, published: "false", access_token: token });
-  const story = await graphPost<{ post_id?: string; success?: boolean }>(`/${pageId}/photo_stories`, { photo_id: photo.id, access_token: token });
-  return { externalId: story.post_id ?? photo.id };
-}
-
-async function instagram(igUserId: string, token: string, post: SocialPost) {
-  const story = post.target === "IG_STORY";
-  const container = await graphPost<{ id: string }>(`/${igUserId}/media`, {
-    image_url: instagramImageUrl(post.imageUrl),
-    ...(story ? { media_type: "STORIES" } : { caption: post.caption }),
-    access_token: token,
-  });
-
-  // Instagram fetches and processes the image asynchronously.
-  for (let i = 0; i < 15; i++) {
-    const { status_code } = await graphGet<{ status_code: string }>(`/${container.id}`, { fields: "status_code", access_token: token });
-    if (status_code === "FINISHED") break;
-    if (status_code === "ERROR" || status_code === "EXPIRED") {
-      throw new Error("Instagram couldn't process the image. It must be a public JPEG, between 4:5 and 1.91:1 for feed posts.");
-    }
-    await new Promise((r) => setTimeout(r, 2000));
-  }
-
-  const published = await graphPost<{ id: string }>(`/${igUserId}/media_publish`, { creation_id: container.id, access_token: token });
-  const { permalink } = await graphGet<{ permalink?: string }>(`/${published.id}`, { fields: "permalink", access_token: token }).catch(() => ({ permalink: undefined }));
-  return { externalId: published.id, permalink };
 }
 
 /** What the admin composer shows after publishing. */
@@ -236,9 +201,17 @@ export function outcome(post: SocialPost) {
 
 /* ------------------------------------------------------------ Scheduler */
 
-/** Instagram's API has no native scheduling, so we run our own: every minute, publish what's due. */
+/**
+ * Neither API schedules posts, so we run our own: every minute, publish what's
+ * due. Once an hour, renew any login that's getting close to expiring.
+ */
 export function startSocialScheduler() {
+  let lastRefresh = 0;
   const tick = async () => {
+    if (Date.now() - lastRefresh > 60 * 60 * 1000) {
+      lastRefresh = Date.now();
+      await refreshExpiringTokens();
+    }
     const due = await prisma.socialPost.findMany({ where: { status: "SCHEDULED", scheduledAt: { lte: new Date() } }, take: 20 });
     for (const post of due) {
       // Claim first, so two server instances can't both publish it.

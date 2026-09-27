@@ -14,7 +14,7 @@ import { randomToken } from "../../lib/tokens.ts";
  * production: hosts like Render and Railway wipe local disk on deploy).
  * Otherwise they're written to ./uploads and served from /uploads.
  *
- * Either way the URL must be public for Instagram/Facebook to fetch it.
+ * Either way the URL must be public for Instagram and Threads to fetch it.
  * ------------------------------------------------------------------ */
 
 export const UPLOAD_DIR = path.resolve("uploads");

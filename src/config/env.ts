@@ -35,11 +35,13 @@ const schema = z.object({
   /** Remove USD until Paystack has enabled it on the account. */
   PAYSTACK_CURRENCIES: z.string().default("NGN,USD"),
 
-  META_APP_ID: optional,
-  META_APP_SECRET: optional,
-  /** Facebook Login for Business configuration ID. When set, it replaces the scope list. */
-  META_CONFIG_ID: optional,
-  META_GRAPH_VERSION: z.string().default("v23.0"),
+  /** Meta dashboard → your app → Instagram → API setup with Instagram login → "Instagram app ID/secret". */
+  INSTAGRAM_APP_ID: optional,
+  INSTAGRAM_APP_SECRET: optional,
+  INSTAGRAM_GRAPH_VERSION: z.string().default("v23.0"),
+  /** Meta dashboard → your Threads app → Use cases → Access the Threads API → Settings → "Threads app ID/secret". */
+  THREADS_APP_ID: optional,
+  THREADS_APP_SECRET: optional,
 
   CLOUDINARY_URL: optional,
 });
