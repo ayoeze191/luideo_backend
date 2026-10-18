@@ -52,7 +52,7 @@ const checkoutSchema = z.object({
 });
 
 /**
- * Creates the order and returns the Paystack URL to send the customer to.
+ * Creates the order and returns the Flutterwave URL to send the customer to.
  * Nothing is made or emailed about until that payment clears. Keep `guestToken` (e.g. in sessionStorage): it's
  * what lets a guest open their confirmation page.
  */
@@ -119,7 +119,7 @@ ordersRouter.get("/:reference", async (req, res) => {
   res.json({ order: serializeOrder(order) });
 });
 
-/** Retry payment for an unpaid order (e.g. the customer closed the Paystack window). */
+/** Retry payment for an unpaid order (e.g. the customer closed the payment page). */
 ordersRouter.post("/:reference/pay", checkoutLimiter, async (req, res) => {
   const { token } = z.object({ token: z.string().min(1) }).parse(req.body);
   const order = await orders.findOrderForViewer(String(req.params.reference), { guestToken: token });

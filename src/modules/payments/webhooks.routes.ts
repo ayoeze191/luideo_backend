@@ -1,30 +1,43 @@
 import express, { Router } from "express";
 import { env } from "../../config/env.ts";
-import { safeEqual, sha512Hmac } from "../../lib/tokens.ts";
+import { safeEqual } from "../../lib/tokens.ts";
 import { markOrderPaid } from "../orders/orders.service.ts";
-import { verifyPayment } from "./paystack.ts";
+import { verifyById } from "./flutterwave.ts";
 
 /**
- * Paystack webhook. Mounted before express.json() — the signature is an
- * HMAC over the exact raw bytes. Even with a valid signature we re-verify the
- * transaction with Paystack before marking anything paid.
+ * Flutterwave webhook. Every call carries the secret hash set in the
+ * Flutterwave dashboard in a `verif-hash` header; anything without it isn't
+ * from Flutterwave. Even then we re-verify the transaction with Flutterwave
+ * before marking anything paid — the webhook only tells us where to look.
  */
 export const webhooksRouter = Router();
 webhooksRouter.use(express.raw({ type: "*/*", limit: "1mb" }));
 
-webhooksRouter.post("/paystack", async (req, res) => {
-  const signature = req.get("x-paystack-signature");
-  if (!env.PAYSTACK_SECRET_KEY || !signature || !Buffer.isBuffer(req.body) || !safeEqual(sha512Hmac(env.PAYSTACK_SECRET_KEY, req.body), signature)) {
+webhooksRouter.post("/flutterwave", async (req, res) => {
+  const hash = req.get("verif-hash");
+  if (!env.FLW_SECRET_HASH || !hash || !safeEqual(hash, env.FLW_SECRET_HASH) || !Buffer.isBuffer(req.body)) {
     res.status(401).end();
     return;
   }
 
-  const event = JSON.parse(req.body.toString("utf8")) as { event: string; data: { reference: string } };
-  if (event.event === "charge.success") {
-    const result = await verifyPayment(event.data.reference);
-    // Attempt references look like LD-7K3M9Q-abc123; the order reference is the metadata, or the prefix.
-    const reference = result.orderReference ?? event.data.reference.replace(/-[A-Za-z0-9_-]{6}$/, "");
-    if (result.paid) await markOrderPaid(reference, result);
+  let event: { event?: string; data?: { id?: number | string; status?: string } };
+  try {
+    event = JSON.parse(req.body.toString("utf8"));
+  } catch {
+    res.status(400).end();
+    return;
+  }
+
+  if (event.event === "charge.completed" && event.data?.id != null) {
+    try {
+      const result = await verifyById(event.data.id);
+      if (result.paid && result.orderReference) await markOrderPaid(result.orderReference, result);
+    } catch (err) {
+      // A 200 stops Flutterwave retrying; let it retry if we couldn't check.
+      console.error("Flutterwave webhook: couldn't verify transaction", event.data.id, err);
+      res.status(500).end();
+      return;
+    }
   }
   res.status(200).end();
 });

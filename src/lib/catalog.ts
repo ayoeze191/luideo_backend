@@ -40,7 +40,7 @@ export const FREE_SHIPPING_EXCLUDES = ["dhl-express"];
 
 /** Every order is paid online before it's made. (COD stays in the schema only for old orders.) */
 export const PAYMENT_METHODS = [
-  { id: "paystack", provider: "PAYSTACK", label: "Pay with Paystack", hint: "Card, bank transfer or USSD", currencies: ["NGN", "USD"] },
+  { id: "flutterwave", provider: "FLUTTERWAVE", label: "Pay with Flutterwave", hint: "Card, bank transfer or USSD", currencies: ["NGN", "USD"] },
 ] as const satisfies readonly { id: string; provider: string; label: string; hint: string; currencies: readonly Currency[] }[];
 
 export type PaymentMethodId = (typeof PAYMENT_METHODS)[number]["id"];

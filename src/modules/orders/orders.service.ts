@@ -16,7 +16,7 @@ import { syncSalesInBackground } from "../../lib/sales.ts";
 import { formatPrice, type Variant } from "../../lib/serialize.ts";
 import { hashToken, orderReference, randomToken, safeEqual } from "../../lib/tokens.ts";
 import { subscribeGuest, setPreferences } from "../alerts/alerts.service.ts";
-import { initializePayment, paystackCurrencies, verifyPayment } from "../payments/paystack.ts";
+import { initializePayment, paymentCurrencies, verifyByReference } from "../payments/flutterwave.ts";
 
 export type CheckoutInput = {
   email: string;
@@ -43,7 +43,7 @@ export async function createOrder(input: CheckoutInput, user?: User) {
   if (!(method.currencies as readonly string[]).includes(input.currency)) {
     throw badRequest(`${method.label} isn't available for ${input.currency} orders.`, "PAYMENT_CURRENCY");
   }
-  if (method.provider === "PAYSTACK" && !paystackCurrencies().includes(input.currency)) {
+  if (!paymentCurrencies().includes(input.currency)) {
     throw new HttpError(503, `Online payment in ${input.currency} isn't available right now.`, "PAYMENT_DISABLED");
   }
 
@@ -151,32 +151,35 @@ export async function createOrder(input: CheckoutInput, user?: User) {
   return { order, guestToken };
 }
 
-export function paymentUrls(order: Order, guestToken: string) {
-  const q = `ref=${encodeURIComponent(order.reference)}&token=${encodeURIComponent(guestToken)}`;
-  return {
-    success: `${env.FRONTEND_URL}/checkout/success?${q}`,
-    cancel: `${env.FRONTEND_URL}/checkout?cancelled=1&${q}`,
-  };
+/**
+ * Where Flutterwave sends the customer afterwards — paid, failed or cancelled.
+ * It adds ?status&tx_ref&transaction_id; the page reads `status` to decide
+ * between the confirmation and "payment not completed".
+ */
+export function paymentReturnUrl(order: Order, guestToken: string) {
+  return `${env.FRONTEND_URL}/checkout/success?ref=${encodeURIComponent(order.reference)}&token=${encodeURIComponent(guestToken)}`;
 }
 
-/** Starts (or restarts) the Paystack checkout and returns its URL. */
+/** Starts (or restarts) the Flutterwave checkout and returns its URL. */
 export async function startPayment(order: Order, guestToken: string) {
   if (order.paymentStatus === "PAID") throw badRequest("This order is already paid.", "ALREADY_PAID");
   if (order.status === "CANCELLED") throw badRequest("This order was cancelled.", "CANCELLED");
-  if (order.paymentProvider !== "PAYSTACK") throw badRequest("This order is paid on delivery.", "NOT_ONLINE");
-  const { redirectUrl, providerRef } = await initializePayment(order, paymentUrls(order, guestToken));
-  await prisma.order.update({ where: { id: order.id }, data: { providerRef } });
+  if (order.paymentProvider === "COD") throw badRequest("This order is paid on delivery.", "NOT_ONLINE");
+  const { redirectUrl, providerRef } = await initializePayment(order, paymentReturnUrl(order, guestToken));
+  // An older unpaid order started on Paystack is simply paid through Flutterwave now.
+  await prisma.order.update({ where: { id: order.id }, data: { providerRef, paymentProvider: "FLUTTERWAVE" } });
   return redirectUrl;
 }
 
-/** Ask Paystack directly — used when the customer lands back before the webhook. */
+/** Ask Flutterwave directly — used when the customer lands back before the webhook. */
 export async function reconcilePayment(order: Order) {
-  if (order.paymentStatus !== "AWAITING" || order.paymentProvider !== "PAYSTACK" || !order.providerRef) return;
+  if (order.paymentStatus !== "AWAITING" || order.paymentProvider !== "FLUTTERWAVE" || !order.providerRef) return;
   try {
-    const result = await verifyPayment(order.providerRef);
+    const result = await verifyByReference(order.providerRef);
     if (result.paid) await markOrderPaid(order.reference, result);
   } catch (err) {
-    console.error(`Couldn't reconcile ${order.reference}:`, err);
+    // "No transaction was found" is normal while the customer hasn't paid yet.
+    console.error(`Couldn't reconcile ${order.reference}:`, err instanceof Error ? err.message : err);
   }
 }
 

@@ -166,6 +166,8 @@ enum PaymentStatus {
 }
 
 enum PaymentProvider {
+  FLUTTERWAVE
+  /// No longer offered; kept so older orders still load.
   PAYSTACK
   COD
 }
@@ -186,7 +188,7 @@ model Order {
   status          OrderStatus     @default(PENDING)
   paymentStatus   PaymentStatus   @default(AWAITING)
   paymentProvider PaymentProvider
-  /// Reference of the latest Paystack attempt.
+  /// Reference (tx_ref) of the latest payment attempt.
   providerRef     String?
   channel         String          @default("Website")
   subtotalKobo    Int

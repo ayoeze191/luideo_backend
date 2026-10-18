@@ -10,7 +10,7 @@ import {
   SHIPPING_METHODS,
 } from "../../lib/catalog.ts";
 import { notFound } from "../../lib/http-error.ts";
-import { paystackCurrencies } from "../payments/paystack.ts";
+import { paymentCurrencies } from "../payments/flutterwave.ts";
 import { prisma } from "../../lib/prisma.ts";
 import { serializeCategory, serializeProduct } from "../../lib/serialize.ts";
 
@@ -30,7 +30,7 @@ catalogRouter.get("/meta", async (_req, res) => {
       id,
       label,
       hint,
-      currencies: id === "paystack" ? currencies.filter((c) => paystackCurrencies().includes(c)) : currencies,
+      currencies: currencies.filter((c) => paymentCurrencies().includes(c)),
     })).filter((m) => m.currencies.length > 0),
   });
 });

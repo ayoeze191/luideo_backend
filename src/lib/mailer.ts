@@ -23,7 +23,15 @@ const transport =
       })
     : null;
 
-export async function sendMail(mail: Mail) {
+/**
+ * The "from" address (MAIL_FROM) has no inbox behind it, so replies go to the
+ * studio unless an email sets its own Reply-To (contact-form copies reply to the customer).
+ */
+const withReplyTo = (mail: Mail): Mail =>
+  mail.headers?.["Reply-To"] || !env.STUDIO_EMAIL ? mail : { ...mail, headers: { ...mail.headers, "Reply-To": env.STUDIO_EMAIL } };
+
+export async function sendMail(original: Mail) {
+  const mail = withReplyTo(original);
   if (resend) {
     // Resend takes Reply-To as its own field rather than a raw header.
     const { "Reply-To": replyTo, ...headers } = mail.headers ?? {};

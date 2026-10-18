@@ -31,9 +31,12 @@ const schema = z.object({
   MAIL_FROM: z.string().default("Lui'Deo <hello@luideo.com>"),
   STUDIO_EMAIL: optional,
 
-  PAYSTACK_SECRET_KEY: optional,
-  /** Remove USD until Paystack has enabled it on the account. */
-  PAYSTACK_CURRENCIES: z.string().default("NGN,USD"),
+  /** Flutterwave dashboard → Settings → API keys → Secret key (FLWSECK_TEST-… or FLWSECK-…). */
+  FLW_SECRET_KEY: optional,
+  /** Any long random string; the same value goes in Flutterwave → Settings → Webhooks → Secret hash. */
+  FLW_SECRET_HASH: optional,
+  /** Remove USD until Flutterwave has enabled it on the account. */
+  FLW_CURRENCIES: z.string().default("NGN,USD"),
 
   /** Meta dashboard → your app → Instagram → API setup with Instagram login → "Instagram app ID/secret". */
   INSTAGRAM_APP_ID: optional,
