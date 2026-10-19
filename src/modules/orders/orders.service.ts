@@ -14,7 +14,7 @@ import { toMinor } from "../../lib/money.ts";
 import { prisma } from "../../lib/prisma.ts";
 import { syncSalesInBackground } from "../../lib/sales.ts";
 import { formatPrice, type Variant } from "../../lib/serialize.ts";
-import { hashToken, orderReference, randomToken, safeEqual } from "../../lib/tokens.ts";
+import { hashToken, orderReference, randomToken, safeEqual, signTicket, verifyTicket } from "../../lib/tokens.ts";
 import { subscribeGuest, setPreferences } from "../alerts/alerts.service.ts";
 import { initializePayment, paymentCurrencies, verifyByReference } from "../payments/flutterwave.ts";
 
@@ -243,6 +243,7 @@ export function sendReceipt(order: Order & { items: OrderItem[] }) {
         name: i.name,
         detail: [i.finishLabel, i.sizeLabel].filter(Boolean).join(" · "),
         quantity: i.quantity,
+        photo: i.photo,
       })),
     }),
   );
@@ -257,6 +258,27 @@ export async function findOrderByReferenceAndEmail(rawReference: string, email: 
 }
 
 /** Tells the studio a paid order is in: who bought what, and where it's going. */
+/** How long the "View this order" link in the studio's email keeps working. */
+const STUDIO_VIEW_DAYS = 90;
+const STUDIO_VIEW_PREFIX = "studio-order:";
+
+/**
+ * A signed, read-only link to one order, for the studio's email: opens a
+ * plain order page without signing in. It can't change anything, and only
+ * ever shows the order it was made for.
+ */
+export function studioViewLink(order: Order) {
+  const key = signTicket(`${STUDIO_VIEW_PREFIX}${order.id}`, STUDIO_VIEW_DAYS * 24 * 60 * 60);
+  return `${env.FRONTEND_URL}/order-view?key=${encodeURIComponent(key)}`;
+}
+
+/** The order a studio view link points at, or null if the link is wrong or expired. */
+export async function findOrderByStudioKey(key: string) {
+  const payload = verifyTicket(key);
+  if (!payload?.startsWith(STUDIO_VIEW_PREFIX)) return null;
+  return prisma.order.findUnique({ where: { id: payload.slice(STUDIO_VIEW_PREFIX.length) }, include: orderInclude });
+}
+
 export function notifyStudio(order: Order & { items: OrderItem[] }) {
   if (!env.STUDIO_EMAIL) return;
   const price = (kobo: number, cents: number) => formatPrice(order.currency === "NGN" ? kobo : cents, order.currency);
@@ -271,6 +293,7 @@ export function notifyStudio(order: Order & { items: OrderItem[] }) {
         name: i.name,
         detail: [i.finishLabel, i.sizeLabel].filter(Boolean).join(" · "),
         quantity: i.quantity,
+        photo: i.photo,
         unitLabel: price(i.unitKobo, i.unitCents),
         lineLabel: price(i.unitKobo * i.quantity, i.unitCents * i.quantity),
       })),
@@ -278,6 +301,7 @@ export function notifyStudio(order: Order & { items: OrderItem[] }) {
       shippingLabel: order.shippingKobo || order.shippingCents ? price(order.shippingKobo, order.shippingCents) : "Free",
       totalLabel: price(order.totalKobo, order.totalCents),
       note: order.note,
+      viewUrl: studioViewLink(order),
     }),
   );
 }

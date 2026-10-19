@@ -23,6 +23,35 @@ const STUDIO = {
 
 const asset = (path: string) => `${env.FRONTEND_URL}${path}`;
 
+/**
+ * A product photo as a full web address an email app can load: Cloudinary
+ * uploads come back small and pre-cropped; brand photos load from the site.
+ */
+function itemPhoto(photo: string | null | undefined) {
+  if (!photo) return null;
+  if (/^https?:\/\//.test(photo)) {
+    return photo.includes("res.cloudinary.com") && photo.includes("/image/upload/")
+      ? photo.replace("/image/upload/", "/image/upload/c_fill,w_160,h_200,f_jpg,q_auto/")
+      : photo;
+  }
+  return asset(photo.startsWith("/") ? photo : `/brand/${photo}.jpg`);
+}
+
+/** One item row: thumbnail, name and details, and an optional amount on the right. */
+function itemRow(l: { name: string; detail: string; quantity: number; photo?: string | null }, right = "", sub = "") {
+  const src = itemPhoto(l.photo);
+  const cell = `padding:12px 0;border-bottom:1px solid ${C.line};vertical-align:middle`;
+  return `<tr>
+<td width="64" style="${cell};padding-right:14px">${
+    src
+      ? `<img src="${src}" width="56" height="70" alt="${escape(l.name)}" style="display:block;width:56px;height:70px;object-fit:cover;border-radius:6px;border:0;background:${C.line}">`
+      : `<div style="width:56px;height:70px;border-radius:6px;background:${C.line}"></div>`
+  }</td>
+<td style="${cell};font-family:${SANS};font-size:15px;line-height:1.45;color:${C.ink}">${escape(l.name)} <span style="color:${C.stone}">× ${l.quantity}</span><br><span style="font-size:13px;color:${C.stone}">${escape(l.detail)}${sub}</span></td>
+${right ? `<td style="${cell};text-align:right;white-space:nowrap;font-family:${SANS};font-size:15px;color:${C.ink}">${right}</td>` : ""}
+</tr>`;
+}
+
 function layout(body: string, footer = "", options: { preheader?: string; hero?: { src: string; alt: string } } = {}) {
   const link = (href: string, label: string) => `<a href="${href}" style="color:${C.stone};text-decoration:underline">${label}</a>`;
   return `<!doctype html>
@@ -143,22 +172,20 @@ export function orderReceipt(order: {
   email: string;
   totalLabel: string;
   etaDays: number;
-  lines: { name: string; detail: string; quantity: number }[];
+  lines: { name: string; detail: string; quantity: number; photo?: string | null }[];
 }): Mail {
   const link = trackLink(order.reference);
   const opening = `We've received payment for order <b>${order.reference}</b> (${escape(order.totalLabel)}). Your pieces go to the bench now and should be ready in about ${order.etaDays} days.`;
   const openingText = `We've received payment for order ${order.reference} (${order.totalLabel}). Ready in about ${order.etaDays} days.`;
   const keep = `To track it, use your order number <b>${order.reference}</b> and this email address.`;
-  const rows = order.lines
-    .map((l) => `<li style="margin:6px 0">${escape(l.name)} × ${l.quantity}<br><span style="color:#78716c;font-size:14px">${escape(l.detail)}</span></li>`)
-    .join("");
+  const rows = order.lines.map((l) => itemRow(l)).join("");
   return {
     to: order.email,
     subject: `Order ${order.reference} confirmed — Lui'Deo`,
     html: layout(
       heading(`Thank you, ${firstName(order.name)}`) +
         p(opening) +
-        `<ul style="padding-left:18px;font-size:16px">${rows}</ul>` +
+        `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 20px">${rows}</table>` +
         p(keep) +
         button(link, "Track your order"),
     ),
@@ -188,22 +215,17 @@ export function newOrderForStudio(
     customer: { name: string; email: string; phone: string };
     address: string;
     shippingMethod: string;
-    lines: { name: string; detail: string; quantity: number; unitLabel: string; lineLabel: string }[];
+    lines: { name: string; detail: string; quantity: number; unitLabel: string; lineLabel: string; photo?: string | null }[];
     subtotalLabel: string;
     shippingLabel: string;
     totalLabel: string;
     note?: string | null;
+    /** Signed read-only page for this order — no sign-in needed. */
+    viewUrl: string;
   },
 ): Mail {
   const link = `${env.FRONTEND_URL}/admin/orders/${encodeURIComponent(order.reference)}`;
-  const cell = "padding:8px 0;border-bottom:1px solid #e7e5e4;vertical-align:top";
-  const rows = order.lines
-    .map(
-      (l) =>
-        `<tr><td style="${cell}">${escape(l.name)} × ${l.quantity}<br><span style="color:#78716c;font-size:13px">${escape(l.detail)} · ${escape(l.unitLabel)} each</span></td>` +
-        `<td style="${cell};text-align:right;white-space:nowrap">${escape(l.lineLabel)}</td></tr>`,
-    )
-    .join("");
+  const rows = order.lines.map((l) => itemRow(l, escape(l.lineLabel), ` · ${escape(l.unitLabel)} each`)).join("");
   const sum = (label: string, value: string, bold = false) =>
     `<tr><td style="padding:4px 0${bold ? ";font-weight:bold" : ""}">${label}</td><td style="padding:4px 0;text-align:right${bold ? ";font-weight:bold" : ""}">${escape(value)}</td></tr>`;
   const c = order.customer;
@@ -213,12 +235,14 @@ export function newOrderForStudio(
     html: layout(
       heading(`New paid order — ${escape(order.totalLabel)}`) +
         p(`<b style="color:${C.ink}">${escape(c.name)}</b> has paid <b style="color:${C.ink}">${escape(order.totalLabel)}</b> for order <b style="color:${C.ink}">${order.reference}</b>.`) +
-        `<table style="width:100%;border-collapse:collapse;font-size:15px;margin:16px 0">${rows}</table>` +
+        `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:16px 0">${rows}</table>` +
         `<table style="width:100%;border-collapse:collapse;font-size:15px">${sum("Subtotal", order.subtotalLabel)}${sum(`Delivery (${escape(order.shippingMethod)})`, order.shippingLabel)}${sum("Total paid", order.totalLabel, true)}</table>` +
+        divider +
         p(`<b>Customer</b><br>${escape(c.name)}<br><a href="mailto:${escape(c.email)}">${escape(c.email)}</a><br>${escape(c.phone)}`) +
         p(`<b>Deliver to</b><br>${escape(order.address)}`) +
         (order.note ? p(`<b>Note</b><br>${escape(order.note).replace(/\n/g, "<br>")}`) : "") +
-        button(link, "Open the order"),
+        button(order.viewUrl, "View this order") +
+        small(`Everything about this order on one page — no sign-in needed. To change its status, <a href="${link}" style="color:${C.gold}">open it in the admin</a>.`),
     ),
     text: [
       `${c.name} has paid ${order.totalLabel} for order ${order.reference}.`,
@@ -233,7 +257,7 @@ export function newOrderForStudio(
       `Deliver to: ${order.address}`,
       ...(order.note ? ["", `Note: ${order.note}`] : []),
       "",
-      `Open the order: ${link}`,
+      `View this order: ${order.viewUrl}`,
     ].join("\n"),
   };
 }

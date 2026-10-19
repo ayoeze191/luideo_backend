@@ -102,6 +102,19 @@ ordersRouter.post("/track", trackLimiter, async (req, res) => {
   res.json({ order: serializeOrder(order) });
 });
 
+const studioViewLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 60, standardHeaders: "draft-8", legacyHeaders: false });
+
+/**
+ * The read-only order page linked from the studio's "paid" email
+ * (/order-view?key=…). The signed key is the only way in; it names one order.
+ */
+ordersRouter.get("/studio-view", studioViewLimiter, async (req, res) => {
+  const key = typeof req.query.key === "string" ? req.query.key : "";
+  const order = key ? await orders.findOrderByStudioKey(key) : null;
+  if (!order) throw notFound("This link has expired or isn't valid. Open the order from the admin instead.");
+  res.json({ order: serializeOrder(order, { internal: true }) });
+});
+
 /**
  * The confirmation page. Signed-in owners need nothing extra; guests pass
  * ?token=. If payment is still pending we check with the provider directly,
