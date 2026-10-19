@@ -41,7 +41,9 @@ export async function register(input: { name: string; email: string; password: s
       passwordHash: await bcrypt.hash(input.password, BCRYPT_ROUNDS),
     },
   });
-  await sendVerificationEmail(user);
+  // One email, not two: a welcome that carries the confirm button.
+  const token = await issueEmailToken(user.id, "VERIFY_EMAIL");
+  sendMailInBackground(emails.welcome(user.email, user.name, token));
   return user;
 }
 
@@ -130,6 +132,8 @@ export async function loginWithGoogle(credential: string) {
     },
   });
   await linkGuestHistory(user);
+  // Google has already confirmed the address, so the welcome has no confirm step.
+  sendMailInBackground(emails.welcome(user.email, user.name));
   return user;
 }
 

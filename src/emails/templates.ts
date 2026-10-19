@@ -4,26 +4,122 @@ import type { Mail } from "../lib/mailer.ts";
 const escape = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
-function layout(body: string, footer = "") {
-  return `<!doctype html><html><body style="margin:0;background:#f6f1ea;font-family:Georgia,serif;color:#1c1917">
-<div style="max-width:520px;margin:0 auto;padding:40px 24px">
-<p style="font-size:22px;letter-spacing:.04em;margin:0 0 28px">Lui'Deo</p>
-${body}
-<p style="margin-top:40px;font-size:12px;color:#78716c">Lui'Deo · Coral and pearl, made in Lagos.${footer}</p>
-</div></body></html>`;
+/* ------------------------------------------------------------------ *
+ * The look shared by every email: logo, a white card on cream, gold
+ * button, and a footer with the studio's links. Table-based with inline
+ * styles, because that's what Gmail, Outlook and Apple Mail all render.
+ * Images load from the live site (FRONTEND_URL).
+ * ------------------------------------------------------------------ */
+
+const C = { cream: "#f6f1ea", card: "#fffdfb", line: "#eadfd6", ink: "#1c1917", soft: "#4a403c", stone: "#8a7b76", gold: "#a9762b" };
+const SERIF = "Georgia,'Times New Roman',serif";
+const SANS = "-apple-system,'Segoe UI',Helvetica,Arial,sans-serif";
+
+const STUDIO = {
+  instagram: "https://www.instagram.com/_luideo_",
+  threads: "https://www.threads.com/@_luideo_",
+  whatsapp: "https://wa.me/2348180472584",
+};
+
+const asset = (path: string) => `${env.FRONTEND_URL}${path}`;
+
+function layout(body: string, footer = "", options: { preheader?: string; hero?: { src: string; alt: string } } = {}) {
+  const link = (href: string, label: string) => `<a href="${href}" style="color:${C.stone};text-decoration:underline">${label}</a>`;
+  return `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Lui'Deo</title></head>
+<body style="margin:0;padding:0;background:${C.cream};-webkit-text-size-adjust:100%">
+${options.preheader ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:${C.cream}">${escape(options.preheader)}&#8199;&#65279;&#847;&#8199;&#65279;&#847;</div>` : ""}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${C.cream}">
+<tr><td align="center" style="padding:32px 16px">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px">
+    <tr><td align="center" style="padding:0 0 24px">
+      <a href="${env.FRONTEND_URL}" style="text-decoration:none">
+        <img src="${asset("/logo/wordmark-black.png")}" width="132" alt="Lui'Deo Jewelry" style="display:block;border:0;width:132px;height:auto;font-family:${SERIF};font-size:22px;color:${C.ink}">
+      </a>
+    </td></tr>
+    <tr><td style="background:${C.card};border:1px solid ${C.line};border-radius:14px;overflow:hidden">
+      ${options.hero ? `<img src="${options.hero.src}" width="560" alt="${escape(options.hero.alt)}" style="display:block;width:100%;max-width:560px;height:auto;border:0;border-radius:14px 14px 0 0">` : ""}
+      <div style="padding:36px 36px 32px;font-family:${SANS};font-size:16px;line-height:1.65;color:${C.soft}">
+        ${body}
+      </div>
+    </td></tr>
+    <tr><td align="center" style="padding:28px 12px 0;font-family:${SANS};font-size:12px;line-height:1.7;color:${C.stone}">
+      <p style="margin:0 0 8px;font-family:${SERIF};font-size:15px;color:${C.ink}">Handmade coral &amp; pearl jewellery · Lagos</p>
+      <p style="margin:0 0 8px">${link(`${env.FRONTEND_URL}/shop`, "Shop")} &nbsp;·&nbsp; ${link(STUDIO.instagram, "Instagram")} &nbsp;·&nbsp; ${link(STUDIO.threads, "Threads")} &nbsp;·&nbsp; ${link(STUDIO.whatsapp, "WhatsApp")}</p>
+      <p style="margin:0">Questions? Just reply to this email.${footer}</p>
+    </td></tr>
+  </table>
+</td></tr></table>
+</body></html>`;
 }
 
+/** A button that holds its shape in every email app (Outlook included). */
 const button = (href: string, label: string) =>
-  `<p style="margin:28px 0"><a href="${href}" style="background:#1c1917;color:#f6f1ea;padding:12px 22px;text-decoration:none;font-family:Arial,sans-serif;font-size:14px">${label}</a></p>`;
+  `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:28px 0"><tr><td style="background:${C.gold};border-radius:6px">
+<a href="${href}" style="display:inline-block;padding:14px 30px;font-family:${SANS};font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#ffffff;text-decoration:none">${label}</a>
+</td></tr></table>`;
 
-const p = (text: string) => `<p style="line-height:1.6;font-size:16px">${text}</p>`;
+const p = (text: string) => `<p style="margin:0 0 16px;font-family:${SANS};font-size:16px;line-height:1.65;color:${C.soft}">${text}</p>`;
+const heading = (text: string) => `<h1 style="margin:0 0 18px;font-family:${SERIF};font-size:30px;line-height:1.2;font-weight:normal;color:${C.ink}">${text}</h1>`;
+const small = (text: string) => `<p style="margin:0 0 16px;font-family:${SANS};font-size:13px;line-height:1.6;color:${C.stone}">${text}</p>`;
+const divider = `<div style="height:1px;background:${C.line};margin:28px 0"></div>`;
+const firstName = (name: string) => escape(name.trim().split(/\s+/)[0] || name);
+
+/** Sent the moment someone creates an account. Email sign-ups also get the confirm button. */
+export function welcome(to: string, name: string, verifyToken?: string): Mail {
+  const verifyLink = verifyToken ? `${env.FRONTEND_URL}/account/verify?token=${encodeURIComponent(verifyToken)}` : null;
+  const perk = (title: string, text: string) =>
+    `<tr><td valign="top" style="padding:0 12px 14px 0;font-family:${SERIF};font-size:18px;color:${C.gold}">&#9670;</td>
+<td style="padding:0 0 14px;font-family:${SANS};font-size:15px;line-height:1.55;color:${C.soft}"><strong style="color:${C.ink}">${title}</strong><br>${text}</td></tr>`;
+  const body =
+    heading(`Welcome, ${firstName(name)}`) +
+    p("Thank you for joining Lui'Deo. Every piece we make — coral beads, pearls, bridal sets — is strung by hand in Lagos, and very often made just for the person wearing it.") +
+    (verifyLink
+      ? p("One quick thing: please confirm your email so we can send your receipts and order updates.") +
+        button(verifyLink, "Confirm my email") +
+        small("The link works for 24 hours. If you didn't create this account, you can ignore this email.")
+      : "") +
+    divider +
+    `<p style="margin:0 0 16px;font-family:${SERIF};font-size:20px;color:${C.ink}">With your account you can</p>` +
+    `<table role="presentation" cellpadding="0" cellspacing="0" border="0">
+${perk("Track every order", "See where each piece is, from the bench to your door.")}
+${perk("Save pieces you love", "Keep a wishlist and come back to it on any device.")}
+${perk("Hear about new pieces first", `Turn on <a href="${env.FRONTEND_URL}/account/alerts" style="color:${C.gold}">new-piece alerts</a> for the kinds of jewellery you like.`)}
+</table>` +
+    divider +
+    p(`Want something made for your day — matched to your aso-oke, gele or gown? <a href="${STUDIO.whatsapp}" style="color:${C.gold}">Message us on WhatsApp</a> and we'll design it with you.`) +
+    (verifyLink ? "" : button(`${env.FRONTEND_URL}/shop`, "Browse the collection")) +
+    `<p style="margin:24px 0 0;font-family:${SERIF};font-size:17px;font-style:italic;color:${C.ink}">With love,<br>Lui'Deo</p>`;
+  return {
+    to,
+    subject: `Welcome to Lui'Deo, ${name.trim().split(/\s+/)[0] || name}`,
+    html: layout(body, "", {
+      preheader: verifyLink ? "Confirm your email and see what your account can do." : "Your account is ready — here's what you can do with it.",
+      hero: { src: asset("/brand/email-welcome.jpg"), alt: "A red coral bead necklace and bracelet from Lui'Deo" },
+    }),
+    text: [
+      `Welcome, ${name}!`,
+      "",
+      "Thank you for joining Lui'Deo. Every piece we make is strung by hand in Lagos.",
+      ...(verifyLink ? ["", `Please confirm your email (link works for 24 hours): ${verifyLink}`] : []),
+      "",
+      "With your account you can track every order, keep a wishlist, and turn on new-piece alerts.",
+      `Want something made just for you? WhatsApp us: ${STUDIO.whatsapp}`,
+      "",
+      `Shop: ${env.FRONTEND_URL}/shop`,
+      "",
+      "With love,",
+      "Lui'Deo",
+    ].join("\n"),
+  };
+}
 
 export function verifyEmail(to: string, name: string, token: string): Mail {
   const link = `${env.FRONTEND_URL}/account/verify?token=${encodeURIComponent(token)}`;
   return {
     to,
     subject: "Confirm your email — Lui'Deo",
-    html: layout(p(`Hello ${escape(name)},`) + p("Please confirm this is your email address.") + button(link, "Confirm email") + p("This link expires in 24 hours.")),
+    html: layout(heading("Confirm your email") + p(`Hello ${firstName(name)}, please confirm this is your email address so we can send your receipts and order updates.`) + button(link, "Confirm my email") + small("The link works for 24 hours."), "", { preheader: "One click to confirm your email." }),
     text: `Hello ${name},\n\nConfirm your email address: ${link}\n\nThis link expires in 24 hours.`,
   };
 }
@@ -33,7 +129,7 @@ export function resetPassword(to: string, name: string, token: string): Mail {
   return {
     to,
     subject: "Reset your password — Lui'Deo",
-    html: layout(p(`Hello ${escape(name)},`) + p("Someone asked to reset the password on your account. If that was you:") + button(link, "Choose a new password") + p("The link expires in one hour. If you didn't ask for this, you can ignore this email.")),
+    html: layout(heading("Reset your password") + p(`Hello ${firstName(name)}, someone asked to reset the password on your Lui'Deo account. If that was you:`) + button(link, "Choose a new password") + small("The link works for one hour. If you didn't ask for this, you can ignore this email — your password won't change."), "", { preheader: "A link to choose a new password." }),
     text: `Hello ${name},\n\nReset your password: ${link}\n\nThe link expires in one hour. If you didn't ask for this, ignore this email.`,
   };
 }
@@ -60,7 +156,7 @@ export function orderReceipt(order: {
     to: order.email,
     subject: `Order ${order.reference} confirmed — Lui'Deo`,
     html: layout(
-      p(`Thank you, ${escape(order.name)}.`) +
+      heading(`Thank you, ${firstName(order.name)}`) +
         p(opening) +
         `<ul style="padding-left:18px;font-size:16px">${rows}</ul>` +
         p(keep) +
@@ -74,7 +170,13 @@ export function orderStatusUpdate(to: string, name: string, reference: string, s
   return {
     to,
     subject: `Order ${reference}: ${status} — Lui'Deo`,
-    html: layout(p(`Hello ${escape(name)},`) + p(`Your order <b>${reference}</b> is now <b>${escape(status.toLowerCase())}</b>.`) + button(trackLink(reference), "Track your order")),
+    html: layout(
+      heading(`Your order is ${escape(status.toLowerCase())}`) +
+        p(`Hello ${firstName(name)}, a quick update: order <b style="color:${C.ink}">${reference}</b> is now <b style="color:${C.ink}">${escape(status.toLowerCase())}</b>.`) +
+        button(trackLink(reference), "Track your order"),
+      "",
+      { preheader: `Order ${reference} is now ${status.toLowerCase()}.` },
+    ),
     text: `Hello ${name},\n\nYour order ${reference} is now ${status.toLowerCase()}.\n\nTrack it: ${trackLink(reference)}`,
   };
 }
@@ -109,7 +211,8 @@ export function newOrderForStudio(
     to,
     subject: `Paid: order ${order.reference} — ${order.totalLabel} from ${order.customer.name}`,
     html: layout(
-      p(`<b>${escape(c.name)}</b> has paid <b>${escape(order.totalLabel)}</b> for order <b>${order.reference}</b>.`) +
+      heading(`New paid order — ${escape(order.totalLabel)}`) +
+        p(`<b style="color:${C.ink}">${escape(c.name)}</b> has paid <b style="color:${C.ink}">${escape(order.totalLabel)}</b> for order <b style="color:${C.ink}">${order.reference}</b>.`) +
         `<table style="width:100%;border-collapse:collapse;font-size:15px;margin:16px 0">${rows}</table>` +
         `<table style="width:100%;border-collapse:collapse;font-size:15px">${sum("Subtotal", order.subtotalLabel)}${sum(`Delivery (${escape(order.shippingMethod)})`, order.shippingLabel)}${sum("Total paid", order.totalLabel, true)}</table>` +
         p(`<b>Customer</b><br>${escape(c.name)}<br><a href="mailto:${escape(c.email)}">${escape(c.email)}</a><br>${escape(c.phone)}`) +
@@ -155,8 +258,8 @@ export function similarProductAlert(input: {
       "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
     },
     html: layout(
-      `<p style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#78716c">${escape(input.reason)}</p>` +
-        `<p style="font-size:26px;margin:8px 0">${escape(input.productName)}</p>` +
+      `<p style="margin:0 0 6px;font-family:${SANS};font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:${C.gold}">${escape(input.reason)}</p>` +
+        heading(escape(input.productName)) +
         p(`${escape(input.tagline)} — ${escape(input.priceLabel)}`) +
         button(productLink, "See the piece"),
       ` <br><a href="${manage}" style="color:#78716c">Manage alerts</a> · <a href="${unsubscribe}" style="color:#78716c">Unsubscribe</a>`,
@@ -188,8 +291,8 @@ export function contactReceived(m: { name: string; email: string; subject: strin
     to: m.email,
     subject: custom ? "We've received your custom order request — Lui'Deo" : "We've received your message — Lui'Deo",
     html: layout(
-      p(`Hello ${escape(m.name)},`) +
-        p(opening) +
+      heading(custom ? "We've got your request" : "We've got your message") +
+        p(`Hello ${firstName(m.name)}, ${opening.charAt(0).toLowerCase()}${opening.slice(1)}`) +
         p(`<span style="color:#78716c;font-size:14px">What you sent us (${escape(m.subject)}):</span><br>${escape(m.message).replace(/\n/g, "<br>")}`) +
         p("If you need to add anything, just reply to this email."),
     ),
@@ -208,7 +311,8 @@ export function newsletterWelcome(to: string, unsubscribeToken: string): Mail {
       "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
     },
     html: layout(
-      p("Thank you for signing up.") +
+      heading("You're on the list") +
+        p("Thank you for signing up.") +
         p("We'll email you whenever a new piece is added to the shop — coral, pearl, bridal sets, earrings and more.") +
         button(`${env.FRONTEND_URL}/shop`, "See what's in the shop now"),
       ` <br><a href="${unsubscribe}" style="color:#78716c">Unsubscribe</a>`,
