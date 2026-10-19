@@ -11,6 +11,7 @@ import {
 } from "../../lib/catalog.ts";
 import { notFound } from "../../lib/http-error.ts";
 import { paymentCurrencies } from "../payments/flutterwave.ts";
+import { ngnPerUsd } from "../../lib/fx.ts";
 import { prisma } from "../../lib/prisma.ts";
 import { serializeCategory, serializeProduct } from "../../lib/serialize.ts";
 
@@ -25,6 +26,8 @@ catalogRouter.get("/meta", async (_req, res) => {
     materials: MATERIALS,
     shippingMethods: SHIPPING_METHODS,
     freeShipping: { over: FREE_SHIPPING_OVER, excludes: FREE_SHIPPING_EXCLUDES },
+    // For suggesting a $ price from a ₦ one in the admin.
+    fx: await ngnPerUsd(),
     // Only what can actually be used right now, per currency.
     paymentMethods: PAYMENT_METHODS.map(({ id, label, hint, currencies }) => ({
       id,

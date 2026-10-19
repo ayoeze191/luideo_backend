@@ -47,6 +47,9 @@ const schema = z.object({
   THREADS_APP_SECRET: optional,
 
   CLOUDINARY_URL: optional,
+
+  /** Fallback ₦ per $ for suggesting dollar prices, used only if the live rate can't be fetched. */
+  NGN_PER_USD: z.coerce.number().positive().default(1500),
 });
 
 const parsed = schema.safeParse(process.env);
