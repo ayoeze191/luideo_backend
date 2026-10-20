@@ -309,7 +309,7 @@ export function notifyStudio(order: Order & { items: OrderItem[] }) {
 export async function findOrderForViewer(reference: string, opts: { user?: User; guestToken?: string }) {
   const order = await prisma.order.findUnique({ where: { reference }, include: orderInclude });
   if (!order) return null;
-  const isOwner = opts.user && (order.userId === opts.user.id || opts.user.role === "ADMIN");
+  const isOwner = opts.user && (order.userId === opts.user.id || opts.user.role === "ADMIN" || opts.user.role === "SUPER_ADMIN");
   const hasToken = opts.guestToken && safeEqual(hashToken(opts.guestToken), order.guestTokenHash);
   return isOwner || hasToken ? order : null;
 }

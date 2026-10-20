@@ -17,7 +17,10 @@ datasource db {
 
 enum Role {
   CUSTOMER
+  /// Runs the shop: products, orders, customers, socials.
   ADMIN
+  /// Everything an admin can do, plus inviting and removing admins.
+  SUPER_ADMIN
 }
 
 model User {
@@ -376,4 +379,17 @@ model CatalogOption {
   createdAt DateTime          @default(now())
 
   @@unique([kind, name])
+}
+
+/// A one-time link that lets someone create (or upgrade) an admin account.
+/// Only the hash of the token is stored; the link itself is shown once.
+model AdminInvite {
+  id          String    @id @default(cuid())
+  tokenHash   String    @unique
+  role        Role      @default(ADMIN)
+  createdById String
+  expiresAt   DateTime
+  usedAt      DateTime?
+  usedById    String?
+  createdAt   DateTime  @default(now())
 }

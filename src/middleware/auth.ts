@@ -78,7 +78,7 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction) {
 
 export function requireAdmin(req: Request, _res: Response, next: NextFunction) {
   if (!req.user) throw unauthorized();
-  if (req.user.role !== "ADMIN") throw forbidden();
+  if (req.user.role !== "ADMIN" && req.user.role !== "SUPER_ADMIN") throw forbidden();
   next();
 }
 

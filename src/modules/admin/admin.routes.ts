@@ -15,11 +15,13 @@ import { followNewCategory, notifyForNewProductInBackground } from "../alerts/al
 import { markOrderPaid, orderInclude } from "../orders/orders.service.ts";
 import { socialRouter } from "../social/social.routes.ts";
 import { uploadsRouter } from "../uploads/uploads.ts";
+import { teamRouter } from "../team/team.routes.ts";
 import { dashboardStats } from "./stats.ts";
 
 export const adminRouter = Router();
 adminRouter.use(requireAdmin);
 adminRouter.use("/social", socialRouter);
+adminRouter.use("/team", teamRouter);
 adminRouter.use("/uploads", uploadsRouter);
 
 adminRouter.get("/stats", async (_req, res) => {

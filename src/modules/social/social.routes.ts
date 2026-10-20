@@ -119,7 +119,7 @@ function readSigned(value: string) {
 socialOAuthRouter.get("/connect", async (req, res) => {
   const signed = readSigned(String(req.query.ticket ?? ""));
   const admin = signed ? await prisma.user.findUnique({ where: { id: signed.adminId } }) : null;
-  if (!signed || admin?.role !== "ADMIN") {
+  if (!signed || (admin?.role !== "ADMIN" && admin?.role !== "SUPER_ADMIN")) {
     return res.redirect(back("error=That+link+has+expired.+Click+Connect+again."));
   }
   if (!isConfigured(signed.provider)) {
