@@ -10,6 +10,7 @@ import { money, toMinor } from "../../lib/money.ts";
 import { prisma } from "../../lib/prisma.ts";
 import { syncSalesInBackground } from "../../lib/sales.ts";
 import { serializeCategory, serializeOrder, serializeProduct } from "../../lib/serialize.ts";
+import { requireAccess } from "../../lib/admin-access.ts";
 import { requireAdmin } from "../../middleware/auth.ts";
 import { followNewCategory, notifyForNewProductInBackground } from "../alerts/alerts.service.ts";
 import { markOrderPaid, orderInclude } from "../orders/orders.service.ts";
@@ -20,9 +21,21 @@ import { dashboardStats } from "./stats.ts";
 
 export const adminRouter = Router();
 adminRouter.use(requireAdmin);
-adminRouter.use("/social", socialRouter);
+
+// Each part of the admin is gated by the area a super admin gave this admin.
+adminRouter.use("/stats", requireAccess("dashboard"));
+// The dashboard lists recent orders too, so it may read the order list.
+adminRouter.use("/orders", (req, res, next) =>
+  req.method === "GET" && req.path === "/" ? requireAccess("orders", "dashboard")(req, res, next) : requireAccess("orders")(req, res, next),
+);
+adminRouter.use(["/products", "/categories", "/options"], requireAccess("products"));
+adminRouter.use("/customers", requireAccess("customers"));
+adminRouter.use("/messages", requireAccess("messages"));
+
+adminRouter.use("/social", requireAccess("social"), socialRouter);
 adminRouter.use("/team", teamRouter);
-adminRouter.use("/uploads", uploadsRouter);
+// Photos are uploaded for products and for social posts.
+adminRouter.use("/uploads", requireAccess("products", "social"), uploadsRouter);
 
 adminRouter.get("/stats", async (_req, res) => {
   res.json(await dashboardStats());

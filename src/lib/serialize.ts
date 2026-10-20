@@ -1,4 +1,5 @@
 import type { Category, Order, OrderEvent, OrderItem, Product, User } from "../generated/prisma/client.ts";
+import { accessOf } from "./admin-access.ts";
 import { ORDER_STATUS_LABEL, PAYMENT_METHODS, PAYMENT_STATUS_LABEL } from "./catalog.ts";
 import { money, optionalMoney } from "./money.ts";
 
@@ -64,6 +65,7 @@ export function serializeUser(u: User) {
     phone: u.phone,
     avatarUrl: u.avatarUrl,
     role: u.role,
+    adminAccess: accessOf(u),
     emailVerified: u.emailVerifiedAt != null,
     hasPassword: u.passwordHash != null,
     hasGoogle: u.googleId != null,

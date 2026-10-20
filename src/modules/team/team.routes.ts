@@ -1,6 +1,7 @@
 import { Router, type Request } from "express";
 import rateLimit from "express-rate-limit";
 import { z } from "zod";
+import { ADMIN_AREAS } from "../../lib/admin-access.ts";
 import { forbidden } from "../../lib/http-error.ts";
 import { serializeUser } from "../../lib/serialize.ts";
 import { currentUser, startSession } from "../../middleware/auth.ts";
@@ -18,14 +19,24 @@ teamRouter.get("/", async (req, res) => {
   res.json({ ...(await team.listTeam()), canManage: true });
 });
 
+const accessBody = z.object({ adminAccess: z.array(z.enum(ADMIN_AREAS)).max(ADMIN_AREAS.length) });
+
 teamRouter.post("/invites", async (req, res) => {
   superOnly(req);
-  res.status(201).json(await team.createInvite(currentUser(req)));
+  const { adminAccess } = accessBody.parse(req.body);
+  res.status(201).json(await team.createInvite(currentUser(req), adminAccess));
 });
 
 teamRouter.delete("/invites/:id", async (req, res) => {
   superOnly(req);
   await team.cancelInvite(req.params.id);
+  res.status(204).end();
+});
+
+teamRouter.patch("/:userId", async (req, res) => {
+  superOnly(req);
+  const { adminAccess } = accessBody.parse(req.body);
+  await team.setAccess(req.params.userId, adminAccess);
   res.status(204).end();
 });
 

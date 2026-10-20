@@ -6,6 +6,7 @@ import { readFileSync } from "node:fs";
 import bcrypt from "bcryptjs";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client.ts";
+import { ADMIN_AREAS } from "../src/lib/admin-access.ts";
 
 type Money = { ngn: number; usd: number };
 type SeedData = {
@@ -77,10 +78,11 @@ async function main() {
         email,
         name: ADMIN_NAME || "Lui'Deo Studio",
         role: "ADMIN",
+        adminAccess: [...ADMIN_AREAS],
         emailVerifiedAt: new Date(),
         passwordHash,
       },
-      update: { role: "ADMIN", emailVerifiedAt: new Date(), passwordHash },
+      update: { role: "ADMIN", adminAccess: [...ADMIN_AREAS], emailVerifiedAt: new Date(), passwordHash },
     });
     console.log(`Admin ready: ${email}`);
   } else {
