@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { z } from "zod";
-import { COLLECTIONS } from "../../lib/catalog.ts";
 import { notFound } from "../../lib/http-error.ts";
 import { prisma } from "../../lib/prisma.ts";
 import { serializeOrder, serializeProduct, serializeUser } from "../../lib/serialize.ts";
@@ -95,7 +94,7 @@ accountRouter.put("/alerts", async (req, res) => {
       enabled: z.boolean(),
       similarToPurchases: z.boolean(),
       categories: z.array(z.enum(categories.map((c) => c.slug) as [string, ...string[]])).max(20),
-      collections: z.array(z.enum(COLLECTIONS)).max(20),
+      collections: z.array(z.string().trim().min(1).max(60)).max(20),
     })
     .partial()
     .parse(req.body);

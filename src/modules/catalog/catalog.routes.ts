@@ -2,10 +2,8 @@ import { Router } from "express";
 import { z } from "zod";
 import type { Prisma } from "../../generated/prisma/client.ts";
 import {
-  COLLECTIONS,
   FREE_SHIPPING_EXCLUDES,
   FREE_SHIPPING_OVER,
-  MATERIALS,
   PAYMENT_METHODS,
   SHIPPING_METHODS,
 } from "../../lib/catalog.ts";
@@ -13,6 +11,7 @@ import { notFound } from "../../lib/http-error.ts";
 import { paymentCurrencies } from "../payments/flutterwave.ts";
 import { ngnPerUsd } from "../../lib/fx.ts";
 import { prisma } from "../../lib/prisma.ts";
+import { listOptions, optionNames } from "../../lib/catalog-options.ts";
 import { serializeCategory, serializeProduct } from "../../lib/serialize.ts";
 
 export const catalogRouter = Router();
@@ -22,8 +21,10 @@ catalogRouter.get("/meta", async (_req, res) => {
   const categories = await prisma.category.findMany({ orderBy: { sortOrder: "asc" } });
   res.json({
     categories: categories.map(serializeCategory),
-    collections: COLLECTIONS,
-    materials: MATERIALS,
+    collections: await optionNames("COLLECTION"),
+    materials: await optionNames("MATERIAL"),
+    /** Collections with their one-line descriptions, for the shop and footer. */
+    collectionDetails: await listOptions("COLLECTION"),
     shippingMethods: SHIPPING_METHODS,
     freeShipping: { over: FREE_SHIPPING_OVER, excludes: FREE_SHIPPING_EXCLUDES },
     // For suggesting a $ price from a ₦ one in the admin.

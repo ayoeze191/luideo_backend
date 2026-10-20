@@ -2,7 +2,8 @@ import { Router } from "express";
 import { z } from "zod";
 import * as emails from "../../emails/templates.ts";
 import { Prisma, type OrderStatus } from "../../generated/prisma/client.ts";
-import { COLLECTIONS, MATERIALS, ORDER_STATUS_LABEL } from "../../lib/catalog.ts";
+import { ORDER_STATUS_LABEL } from "../../lib/catalog.ts";
+import { addOption, assertOption } from "../../lib/catalog-options.ts";
 import { badRequest, notFound } from "../../lib/http-error.ts";
 import { sendMailInBackground } from "../../lib/mailer.ts";
 import { money, toMinor } from "../../lib/money.ts";
@@ -41,8 +42,8 @@ const productSchema = z.object({
   name: z.string().trim().min(1).max(160),
   tagline: z.string().trim().max(200).default(""),
   category: z.string(),
-  collection: z.enum(COLLECTIONS),
-  material: z.enum(MATERIALS),
+  collection: z.string().trim().min(1).max(60),
+  material: z.string().trim().min(1).max(60),
   price: moneyInput,
   /** The original price, shown struck through, when the piece is on discount. `price` is what's charged. */
   compareAt: moneyInput.nullable().optional(),
@@ -84,6 +85,15 @@ function productColumns<T extends Partial<ProductInput>>(input: T) {
     ...(sizes !== undefined && { sizes: sizes ?? Prisma.DbNull }),
   };
 }
+
+const slugify = (name: string, fallback: string) =>
+  name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Ìyàwó → Iyawo
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 60) || fallback;
 
 async function uniqueSlug(name: string) {
   const base =
@@ -132,6 +142,8 @@ adminRouter.get("/products/:id", async (req, res) => {
 adminRouter.post("/products", async (req, res) => {
   const input = productSchema.parse(req.body);
   await assertCategory(input.category);
+  await assertOption("COLLECTION", input.collection);
+  await assertOption("MATERIAL", input.material);
   assertDiscount(input.price, input.compareAt);
   const product = await prisma.product.create({
     data: {
@@ -150,6 +162,8 @@ adminRouter.post("/products", async (req, res) => {
 adminRouter.patch("/products/:id", async (req, res) => {
   const input = productSchema.partial().parse(req.body);
   await assertCategory(input.category);
+  await assertOption("COLLECTION", input.collection);
+  await assertOption("MATERIAL", input.material);
   if (input.price || input.compareAt) {
     const current = await prisma.product.findUnique({ where: { id: req.params.id } });
     if (!current) throw notFound();
@@ -175,7 +189,8 @@ adminRouter.delete("/products/:id", async (req, res) => {
 /* ------------------------------------------------------------ Categories */
 
 const categorySchema = z.object({
-  slug: z.string().trim().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/).max(60),
+  /** Made from the name when left out. */
+  slug: z.string().trim().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/).max(60).optional(),
   name: z.string().trim().min(1).max(80),
   blurb: z.string().trim().max(300).default(""),
   photo: z.string().trim().max(200).nullable().optional(),
@@ -183,7 +198,17 @@ const categorySchema = z.object({
 });
 
 adminRouter.post("/categories", async (req, res) => {
-  const category = await prisma.category.create({ data: categorySchema.parse(req.body) });
+  const input = categorySchema.parse(req.body);
+  // Adding "Anklets" twice from the product form shouldn't fail — hand back the one that's there.
+  const same = await prisma.category.findFirst({ where: { name: { equals: input.name.trim(), mode: "insensitive" } } });
+  if (same) {
+    res.json({ category: serializeCategory(same) });
+    return;
+  }
+  let slug = input.slug ?? slugify(input.name, "category");
+  for (let n = 2; await prisma.category.findUnique({ where: { slug } }); n++) slug = `${slugify(input.name, "category")}-${n}`;
+  const last = await prisma.category.aggregate({ _max: { sortOrder: true } });
+  const category = await prisma.category.create({ data: { ...input, slug, sortOrder: input.sortOrder || (last._max.sortOrder ?? 0) + 1 } });
   await followNewCategory(category.slug);
   res.status(201).json({ category: serializeCategory(category) });
 });
@@ -192,6 +217,15 @@ adminRouter.patch("/categories/:slug", async (req, res) => {
   const { slug: _, ...data } = categorySchema.partial().parse(req.body);
   const category = await prisma.category.update({ where: { slug: req.params.slug }, data });
   res.json({ category: serializeCategory(category) });
+});
+
+/** Add a collection or material from the product form. Returns the existing one if it's already there. */
+adminRouter.post("/options", async (req, res) => {
+  const { kind, name, blurb } = z
+    .object({ kind: z.enum(["collection", "material"]), name: z.string().trim().min(1).max(60), blurb: z.string().trim().max(200).default("") })
+    .parse(req.body);
+  const option = await addOption(kind === "collection" ? "COLLECTION" : "MATERIAL", name, blurb);
+  res.status(201).json({ option: { kind, name: option.name, blurb: option.blurb } });
 });
 
 /* ------------------------------------------------------------ Orders */

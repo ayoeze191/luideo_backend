@@ -2,16 +2,7 @@ import type { Currency } from "../generated/prisma/client.ts";
 
 /* Mirrors frontend/src/lib/types.ts and orders.ts. Keep the two in step. */
 
-export const COLLECTIONS = ["Ìyàwó", "Olóri", "Heritage", "Everyday"] as const;
-
-export const MATERIALS = [
-  "Natural coral",
-  "Baroque pearl",
-  "Freshwater pearl",
-  "18k gold-plated brass",
-  "Crystal & rhinestone",
-  "Brass & bead",
-] as const;
+/* Collections and materials are in the database now: see lib/catalog-options.ts. */
 
 export const BADGES = ["New", "Bestseller", "Limited", "Last one"] as const;
 

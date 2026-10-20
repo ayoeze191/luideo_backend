@@ -358,3 +358,22 @@ model SocialPost {
 
   @@index([status, scheduledAt])
 }
+
+enum CatalogOptionKind {
+  COLLECTION
+  MATERIAL
+}
+
+/// Collections (Ìyàwó, Olóri…) and materials (Natural coral…) the admin can
+/// pick from — and add to — when creating a piece. Products store the name.
+model CatalogOption {
+  id        String            @id @default(cuid())
+  kind      CatalogOptionKind
+  name      String
+  /// Shown with collections in the shop and footer.
+  blurb     String            @default("")
+  sortOrder Int               @default(0)
+  createdAt DateTime          @default(now())
+
+  @@unique([kind, name])
+}
