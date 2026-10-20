@@ -6,7 +6,7 @@ import { serializeUser } from "../../lib/serialize.ts";
 import { currentUser, startSession } from "../../middleware/auth.ts";
 import * as team from "./team.service.ts";
 
-/** Mounted under /api/admin/team — any admin can see the team; only super admins change it. */
+/** Mounted under /api/admin/team — super admins only. */
 export const teamRouter = Router();
 
 const superOnly = (req: Request) => {
@@ -14,7 +14,8 @@ const superOnly = (req: Request) => {
 };
 
 teamRouter.get("/", async (req, res) => {
-  res.json({ ...(await team.listTeam()), canManage: currentUser(req).role === "SUPER_ADMIN" });
+  superOnly(req);
+  res.json({ ...(await team.listTeam()), canManage: true });
 });
 
 teamRouter.post("/invites", async (req, res) => {
