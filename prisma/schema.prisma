@@ -105,7 +105,10 @@ model Product {
   priceCents      Int
   compareAtKobo   Int?
   compareAtCents  Int?
+  /// The main photo: shop cards, social posts and emails use this one.
   photo           String?
+  /// More photos, shown after the main one on the product page.
+  gallery         String[]  @default([])
   /// Variant[] — { id, label, swatch?, inStock }
   finishes        Json
   /// Variant[] | null

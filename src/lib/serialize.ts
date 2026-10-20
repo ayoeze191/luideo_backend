@@ -35,6 +35,7 @@ export function serializeProduct(p: Product) {
     price: money(p.priceKobo, p.priceCents),
     compareAt: optionalMoney(p.compareAtKobo, p.compareAtCents),
     photo: p.photo ?? undefined,
+    gallery: p.gallery,
     finishes: p.finishes as Variant[],
     sizes: (p.sizes as Variant[] | null) ?? undefined,
     sizeLabel: p.sizeLabel ?? undefined,

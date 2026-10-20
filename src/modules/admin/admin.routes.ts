@@ -51,6 +51,8 @@ const variant = z.object({
 });
 const moneyInput = z.object({ ngn: z.number().nonnegative(), usd: z.number().nonnegative() });
 
+const MAX_EXTRA_PHOTOS = 9;
+
 const productSchema = z.object({
   /** Generated from the name when omitted. */
   slug: z.string().trim().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Lower-case words separated by hyphens.").max(120).optional(),
@@ -63,6 +65,8 @@ const productSchema = z.object({
   /** The original price, shown struck through, when the piece is on discount. `price` is what's charged. */
   compareAt: moneyInput.nullable().optional(),
   photo: z.string().trim().max(200).nullable().optional(),
+  /** Extra photos after the main one. */
+  gallery: z.array(z.string().trim().min(1).max(200)).max(MAX_EXTRA_PHOTOS, `Up to ${MAX_EXTRA_PHOTOS + 1} photos per piece.`).optional(),
   /** Defaults to a single "As pictured" option. */
   finishes: z.array(variant).min(1).default([{ id: "as-pictured", label: "As pictured", inStock: true }]),
   sizes: z.array(variant).nullable().optional(),
