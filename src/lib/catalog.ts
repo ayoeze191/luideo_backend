@@ -53,19 +53,19 @@ export const SHIPPING_METHODS: ShippingMethod[] = [
     "Ikeja", "Abule Egba", "Iju Ishaga", "Obawole", "Ogba", "Meiran", "Agege", "Allen Avenue",
     "Airport Road", "Magodo Phase 1", "Ojodu Berger", "Berger",
   ]),
-  lagos("alimosho", "Alimosho & around", 6000, [
-    "OPIC", "Ayobo", "Ipaja", "Iyana Ipaja", "Egbeda", "Ikotun", "Ikotun Egbe", "Abaranje", "Kola",
-    "Agbado", "Alagbado", "Iyana Oba", "Igbo Elerin",
-  ]),
   lagos("maryland", "Maryland & around", 6000, [
     "Maryland", "Palmgrove", "Jibowu", "Fadeyi", "Obanikoro", "Mende", "Anthony", "Mushin",
   ]),
-  lagos("surulere", "Surulere, Yaba & around", 6500, [
-    "Surulere", "Yaba", "Cele", "Ijesha", "Mile 2", "Orile Iganmu", "Orile", "Alaba", "Suru Alaba",
-    "Ijora", "Ijora 7Up",
-  ]),
   lagos("island", "Victoria Island, Ikoyi & Lekki Phase 1", 7000, [
     "Victoria Island", "Ikoyi", "Lekki Phase 1", "Jakande", "Ikate",
+  ]),
+  lagos("alimosho", "Alimosho & around", 8000, [
+    "OPIC", "Ayobo", "Ipaja", "Iyana Ipaja", "Egbeda", "Ikotun", "Ikotun Egbe", "Abaranje", "Kola",
+    "Agbado", "Alagbado", "Iyana Oba", "Igbo Elerin",
+  ]),
+  lagos("surulere", "Surulere, Yaba & around", 8000, [
+    "Surulere", "Yaba", "Cele", "Ijesha", "Mile 2", "Orile Iganmu", "Orile", "Alaba", "Suru Alaba",
+    "Ijora", "Ijora 7Up",
   ]),
   lagos("festac", "Festac, Trade Fair & around", 8000, [
     "Trade Fair", "Ojo Alaba", "Okoko", "Isolo", "Festac", "Satellite Town",
@@ -74,7 +74,7 @@ export const SHIPPING_METHODS: ShippingMethod[] = [
   lagos("ajah", "Ajah & around", 9000, [
     "Ajah", "Addo Road", "Lagos Business School", "Badore", "Shoprite Sangotedo Road",
   ]),
-  lagos("sangotedo", "Sangotedo, Abijo & beyond", 10000, ["Sangotedo", "Abijo"]),
+  lagos("sangotedo", "Sangotedo, Abijo & beyond", 12000, ["Sangotedo", "Abijo"]),
   {
     id: "outside-lagos",
     name: "Delivery outside Lagos",
