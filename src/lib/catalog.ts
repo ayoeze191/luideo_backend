@@ -63,11 +63,11 @@ export const SHIPPING_METHODS: ShippingMethod[] = [
     "Surulere", "Yaba", "Cele", "Ijesha", "Mile 2", "Orile Iganmu", "Orile", "Alaba", "Suru Alaba",
     "Ijora", "Ijora 7Up",
   ]),
-  lagos("festac", "Festac, Trade Fair & around", 8000, [
-    "Trade Fair", "Ojo Alaba", "Okoko", "Isolo", "Festac", "Satellite Town",
-  ]),
   lagos("island", "Victoria Island, Ikoyi & Lekki Phase 1", 7000, [
     "Victoria Island", "Ikoyi", "Lekki Phase 1", "Jakande", "Ikate",
+  ]),
+  lagos("festac", "Festac, Trade Fair & around", 8000, [
+    "Trade Fair", "Ojo Alaba", "Okoko", "Isolo", "Festac", "Satellite Town",
   ]),
   lagos("vgc", "Orchid, VGC & Ikota", 8000, ["Orchid", "VGC", "Ikota"]),
   lagos("ajah", "Ajah & around", 9000, [
