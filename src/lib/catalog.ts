@@ -25,7 +25,8 @@ export type ShippingMethod = {
 
 /* ------------------------------------------------------------------ *
  * Delivery prices, from the studio's own rate card. Within Lagos the
- * price depends on the area; the rest of Nigeria is one price. Orders
+ * price depends on the area; the rest of Nigeria is one price; pickup is
+ * free. There's no free delivery, whatever the order size. Orders
  * from outside Nigeria aren't paid online — the checkout sends them to
  * the studio's WhatsApp to arrange shipping.
  *
@@ -83,11 +84,16 @@ export const SHIPPING_METHODS: ShippingMethod[] = [
     transitDays: 5,
     zone: "outside-lagos",
   },
+  {
+    id: "pickup",
+    name: "Pickup",
+    detail: "Collect it yourself — we'll message you the address and time when it's ready",
+    price: ngn(0),
+    regions: ["Nigeria"],
+    transitDays: 0,
+  },
 ];
 
-/** Orders at or over this subtotal ship free, except the methods listed. */
-export const FREE_SHIPPING_OVER = { ngn: 250000, usd: 330 };
-export const FREE_SHIPPING_EXCLUDES: string[] = [];
 
 /** Every order is paid online before it's made. (COD stays in the schema only for old orders.) */
 export const PAYMENT_METHODS = [

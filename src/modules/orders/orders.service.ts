@@ -2,8 +2,6 @@ import { env } from "../../config/env.ts";
 import * as emails from "../../emails/templates.ts";
 import type { Currency, Order, OrderItem, User } from "../../generated/prisma/client.ts";
 import {
-  FREE_SHIPPING_EXCLUDES,
-  FREE_SHIPPING_OVER,
   PAYMENT_METHODS,
   SHIPPING_METHODS,
   type PaymentMethodId,
@@ -113,13 +111,8 @@ export async function createOrder(input: CheckoutInput, user?: User) {
   const subtotalCents = lines.reduce((n, l) => n + l.unitCents * l.quantity, 0);
 
   // The threshold is judged in the currency the customer is paying in.
-  const freeShipping =
-    !FREE_SHIPPING_EXCLUDES.includes(shipping.id) &&
-    (input.currency === "NGN"
-      ? subtotalKobo >= toMinor(FREE_SHIPPING_OVER.ngn)
-      : subtotalCents >= toMinor(FREE_SHIPPING_OVER.usd));
-  const shippingKobo = freeShipping ? 0 : toMinor(shipping.price.ngn);
-  const shippingCents = freeShipping ? 0 : toMinor(shipping.price.usd);
+  const shippingKobo = toMinor(shipping.price.ngn);
+  const shippingCents = toMinor(shipping.price.usd);
   const etaDays = Math.max(...lines.map((l) => l.leadDays)) + shipping.transitDays;
 
   const guestToken = randomToken();

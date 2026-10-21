@@ -2,8 +2,6 @@ import { Router } from "express";
 import { z } from "zod";
 import type { Prisma } from "../../generated/prisma/client.ts";
 import {
-  FREE_SHIPPING_EXCLUDES,
-  FREE_SHIPPING_OVER,
   PAYMENT_METHODS,
   SHIPPING_METHODS,
 } from "../../lib/catalog.ts";
@@ -26,7 +24,6 @@ catalogRouter.get("/meta", async (_req, res) => {
     /** Collections with their one-line descriptions, for the shop and footer. */
     collectionDetails: await listOptions("COLLECTION"),
     shippingMethods: SHIPPING_METHODS,
-    freeShipping: { over: FREE_SHIPPING_OVER, excludes: FREE_SHIPPING_EXCLUDES },
     // For suggesting a $ price from a ₦ one in the admin.
     fx: await ngnPerUsd(),
     // Only what can actually be used right now, per currency.
