@@ -24,6 +24,8 @@ export type CheckoutInput = {
   phone: string;
   address: { line1: string; city: string; state: string; country: string; postcode?: string };
   shippingMethodId: string;
+  /** For Lagos zones: the area picked, e.g. "Ogba". */
+  shippingArea?: string;
   paymentMethod: PaymentMethodId;
   currency: Currency;
   items: { productId: string; finishId: string; sizeId?: string; quantity: number }[];
@@ -52,6 +54,16 @@ export async function createOrder(input: CheckoutInput, user?: User) {
   if (!shipping.regions.includes(input.address.country)) {
     throw badRequest(`${shipping.name} doesn't deliver to ${input.address.country}.`, "SHIPPING_REGION");
   }
+  const inLagos = input.address.state.trim().toLowerCase() === "lagos";
+  if (shipping.zone === "lagos" && !inLagos) {
+    throw badRequest("That delivery price is for Lagos addresses. Choose delivery outside Lagos instead.", "SHIPPING_REGION");
+  }
+  if (shipping.zone === "outside-lagos" && inLagos) {
+    throw badRequest("For a Lagos address, choose your area so we can charge the right delivery price.", "SHIPPING_REGION");
+  }
+  // The area the customer picked within the zone, kept with the order for the courier.
+  const area = shipping.areas?.find((a) => a === input.shippingArea);
+  const shippingName = area ? `${shipping.name} (${area})` : shipping.name;
 
   const products = await prisma.product.findMany({
     where: { id: { in: input.items.map((i) => i.productId) }, published: true },
@@ -129,7 +141,7 @@ export async function createOrder(input: CheckoutInput, user?: User) {
       shippingCents,
       totalKobo: subtotalKobo + shippingKobo,
       totalCents: subtotalCents + shippingCents,
-      shippingMethod: shipping.name,
+      shippingMethod: shippingName,
       address: input.address,
       note: [input.giftMessage && `Gift message: “${input.giftMessage}”`, input.note]
         .filter(Boolean)

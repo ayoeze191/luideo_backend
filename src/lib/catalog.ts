@@ -15,19 +15,79 @@ export type ShippingMethod = {
   regions: string[];
   /** Added to the longest made-to-order lead time for the ETA. */
   transitDays: number;
+  /**
+   * "lagos": only for a Lagos address, and the customer picks their area from
+   * `areas`. "outside-lagos": only for an address in another state.
+   */
+  zone?: "lagos" | "outside-lagos";
+  areas?: string[];
 };
 
+/* ------------------------------------------------------------------ *
+ * Delivery prices, from the studio's own rate card. Within Lagos the
+ * price depends on the area; the rest of Nigeria is one price. Orders
+ * from outside Nigeria aren't paid online — the checkout sends them to
+ * the studio's WhatsApp to arrange shipping.
+ *
+ * To change a price, change `ngn` here; `usd` follows from it (for
+ * customers paying in dollars for a Nigerian address).
+ * ------------------------------------------------------------------ */
+
+const USD_RATE = 1500;
+const ngn = (n: number) => ({ ngn: n, usd: Math.ceil(n / USD_RATE) });
+
+const lagos = (id: string, name: string, price: number, areas: string[]): ShippingMethod => ({
+  id: `lagos-${id}`,
+  name: `Lagos — ${name}`,
+  detail: "Delivered by courier once your piece is ready",
+  price: ngn(price),
+  regions: ["Nigeria"],
+  transitDays: 2,
+  zone: "lagos",
+  areas,
+});
+
 export const SHIPPING_METHODS: ShippingMethod[] = [
-  { id: "lagos-sameday", name: "Lagos same-day courier", detail: "Ordered before 12pm, delivered today", price: { ngn: 5000, usd: 7 }, regions: ["Nigeria"], transitDays: 0 },
-  { id: "nigeria-standard", name: "Nationwide (Nigeria)", detail: "2–4 working days, tracked", price: { ngn: 7500, usd: 10 }, regions: ["Nigeria"], transitDays: 4 },
-  { id: "usps-ground", name: "USPS Ground", detail: "3–6 working days within the US", price: { ngn: 9000, usd: 12 }, regions: ["United States"], transitDays: 6 },
-  { id: "dhl-express", name: "DHL Express", detail: "2–4 working days, worldwide, fully tracked", price: { ngn: 34000, usd: 45 }, regions: ["Nigeria", "United States"], transitDays: 4 },
-  { id: "studio-pickup", name: "Studio pickup — Lekki", detail: "Collect from the studio, Tue–Sat", price: { ngn: 0, usd: 0 }, regions: ["Nigeria"], transitDays: 0 },
+  lagos("ikeja", "Ikeja & around", 5000, [
+    "Ikeja", "Abule Egba", "Iju Ishaga", "Obawole", "Ogba", "Meiran", "Agege", "Allen Avenue",
+    "Airport Road", "Magodo Phase 1", "Ojodu Berger", "Berger",
+  ]),
+  lagos("alimosho", "Alimosho & around", 6000, [
+    "OPIC", "Ayobo", "Ipaja", "Iyana Ipaja", "Egbeda", "Ikotun", "Ikotun Egbe", "Abaranje", "Kola",
+    "Agbado", "Alagbado", "Iyana Oba", "Igbo Elerin",
+  ]),
+  lagos("maryland", "Maryland & around", 6000, [
+    "Maryland", "Palmgrove", "Jibowu", "Fadeyi", "Obanikoro", "Mende", "Anthony", "Mushin",
+  ]),
+  lagos("surulere", "Surulere, Yaba & around", 6500, [
+    "Surulere", "Yaba", "Cele", "Ijesha", "Mile 2", "Orile Iganmu", "Orile", "Alaba", "Suru Alaba",
+    "Ijora", "Ijora 7Up",
+  ]),
+  lagos("festac", "Festac, Trade Fair & around", 8000, [
+    "Trade Fair", "Ojo Alaba", "Okoko", "Isolo", "Festac", "Satellite Town",
+  ]),
+  lagos("island", "Victoria Island, Ikoyi & Lekki Phase 1", 7000, [
+    "Victoria Island", "Ikoyi", "Lekki Phase 1", "Jakande", "Ikate",
+  ]),
+  lagos("vgc", "Orchid, VGC & Ikota", 8000, ["Orchid", "VGC", "Ikota"]),
+  lagos("ajah", "Ajah & around", 9000, [
+    "Ajah", "Addo Road", "Lagos Business School", "Badore", "Shoprite Sangotedo Road",
+  ]),
+  lagos("sangotedo", "Sangotedo, Abijo & beyond", 10000, ["Sangotedo", "Abijo"]),
+  {
+    id: "outside-lagos",
+    name: "Delivery outside Lagos",
+    detail: "Anywhere else in Nigeria, by courier",
+    price: ngn(15000),
+    regions: ["Nigeria"],
+    transitDays: 5,
+    zone: "outside-lagos",
+  },
 ];
 
-/** Orders at or over this subtotal ship free — except DHL Express, which is always charged. */
+/** Orders at or over this subtotal ship free, except the methods listed. */
 export const FREE_SHIPPING_OVER = { ngn: 250000, usd: 330 };
-export const FREE_SHIPPING_EXCLUDES = ["dhl-express"];
+export const FREE_SHIPPING_EXCLUDES: string[] = [];
 
 /** Every order is paid online before it's made. (COD stays in the schema only for old orders.) */
 export const PAYMENT_METHODS = [

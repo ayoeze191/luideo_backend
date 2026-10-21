@@ -31,6 +31,7 @@ const checkoutSchema = z.object({
     postcode: z.string().trim().max(20).optional(),
   }),
   shippingMethodId: z.string(),
+  shippingArea: z.string().trim().max(80).optional(),
   paymentMethod: z.enum(PAYMENT_METHODS.map((m) => m.id) as [(typeof PAYMENT_METHODS)[number]["id"]]),
   currency: z.enum(["NGN", "USD"]),
   items: z
