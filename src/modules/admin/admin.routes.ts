@@ -17,6 +17,7 @@ import { markOrderPaid, orderInclude } from "../orders/orders.service.ts";
 import { socialRouter } from "../social/social.routes.ts";
 import { uploadsRouter } from "../uploads/uploads.ts";
 import { teamRouter } from "../team/team.routes.ts";
+import { adminGalleryRouter } from "../gallery/gallery.routes.ts";
 import { dashboardStats } from "./stats.ts";
 
 export const adminRouter = Router();
@@ -31,11 +32,12 @@ adminRouter.use("/orders", (req, res, next) =>
 adminRouter.use(["/products", "/categories", "/options"], requireAccess("products"));
 adminRouter.use("/customers", requireAccess("customers"));
 adminRouter.use("/messages", requireAccess("messages"));
+adminRouter.use("/gallery", requireAccess("gallery"), adminGalleryRouter);
 
 adminRouter.use("/social", requireAccess("social"), socialRouter);
 adminRouter.use("/team", teamRouter);
-// Photos are uploaded for products and for social posts.
-adminRouter.use("/uploads", requireAccess("products", "social"), uploadsRouter);
+// Photos are uploaded for products, social posts and the gallery.
+adminRouter.use("/uploads", requireAccess("products", "social", "gallery"), uploadsRouter);
 
 adminRouter.get("/stats", async (_req, res) => {
   res.json(await dashboardStats());

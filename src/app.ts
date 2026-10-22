@@ -8,6 +8,7 @@ import { loadSession } from "./middleware/auth.ts";
 import { errorHandler, notFoundHandler } from "./middleware/errors.ts";
 import { originCheck } from "./middleware/origin-check.ts";
 import { accountRouter } from "./modules/account/account.routes.ts";
+import { galleryRouter } from "./modules/gallery/gallery.routes.ts";
 import { adminRouter } from "./modules/admin/admin.routes.ts";
 import { alertsRouter } from "./modules/alerts/alerts.routes.ts";
 import { authRouter } from "./modules/auth/auth.routes.ts";
@@ -52,6 +53,7 @@ export function createApp() {
 
   app.use("/api/auth", authRouter);
   app.use("/api", catalogRouter);
+  app.use("/api/gallery", galleryRouter);
   app.use("/api/orders", ordersRouter);
   app.use("/api/me", accountRouter);
   app.use("/api/alerts", alertsRouter);

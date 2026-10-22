@@ -92,6 +92,23 @@ model Category {
   products  Product[]
 }
 
+/// The "worn by you" wall on the home page and /gallery, managed from the admin.
+model GalleryPhoto {
+  id        String   @id @default(cuid())
+  /// An uploaded image URL, or a key for a photo shipped with the site (public/brand).
+  url       String
+  /// The piece in the picture. Shown on hover, and as the image description.
+  caption   String   @default("")
+  /// When set, the tile links to this product.
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  /// Lower comes first.
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([sortOrder])
+}
+
 model Product {
   id              String   @id @default(cuid())
   slug            String   @unique
@@ -139,6 +156,7 @@ model Product {
   @@index([categorySlug])
   @@index([collection])
   @@index([published, createdAt])
+  galleryPhotos   GalleryPhoto[]
 }
 
 model WishlistItem {
