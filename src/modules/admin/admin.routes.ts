@@ -12,6 +12,7 @@ import { syncSalesInBackground } from "../../lib/sales.ts";
 import { serializeCategory, serializeOrder, serializeProduct } from "../../lib/serialize.ts";
 import { requireAccess } from "../../lib/admin-access.ts";
 import { normaliseFinishes } from "../../lib/variants.ts";
+import { cleanupPhotosInBackground, photosOf } from "../../lib/photo-cleanup.ts";
 import { requireAdmin } from "../../middleware/auth.ts";
 import { followNewCategory, notifyForNewProductInBackground } from "../alerts/alerts.service.ts";
 import { markOrderPaid, orderInclude } from "../orders/orders.service.ts";
@@ -201,7 +202,10 @@ adminRouter.patch("/products/:id", async (req, res) => {
     const compareAt = input.compareAt !== undefined ? input.compareAt : serializeProduct(current).compareAt;
     assertDiscount(input.price ?? serializeProduct(current).price, compareAt);
   }
+  const before = await prisma.product.findUnique({ where: { id: req.params.id }, select: { photo: true, gallery: true, finishes: true } });
   const product = await prisma.product.update({ where: { id: req.params.id }, data: productColumns(input) });
+  // Photos taken off the piece go from Cloudinary too, unless something else still uses them.
+  if (before) cleanupPhotosInBackground(photosOf(before));
   // First publish of a draft sends alerts; later edits don't (alertsSentAt guards it).
   if (product.published && !product.alertsSentAt) notifyForNewProductInBackground(product.id);
   res.json({ product: serializeProduct(product) });
@@ -213,7 +217,9 @@ adminRouter.patch("/products/:id", async (req, res) => {
  * To take a piece off the shop without losing it, hide it instead.
  */
 adminRouter.delete("/products/:id", async (req, res) => {
-  await prisma.product.delete({ where: { id: req.params.id } });
+  const product = await prisma.product.delete({ where: { id: req.params.id } });
+  // Its photos go from Cloudinary too — except any a past order, the gallery or another piece still shows.
+  cleanupPhotosInBackground(photosOf(product));
   res.status(204).end();
 });
 

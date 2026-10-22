@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { notFound } from "../../lib/http-error.ts";
+import { cleanupPhotosInBackground } from "../../lib/photo-cleanup.ts";
 import { prisma } from "../../lib/prisma.ts";
 
 /* ------------------------------------------------------------------ *
@@ -84,6 +85,8 @@ adminGalleryRouter.post("/reorder", async (req, res) => {
 });
 
 adminGalleryRouter.delete("/:id", async (req, res) => {
+  const photo = await prisma.galleryPhoto.findUnique({ where: { id: req.params.id } });
   await prisma.galleryPhoto.deleteMany({ where: { id: req.params.id } });
+  if (photo) cleanupPhotosInBackground([photo.url]);
   res.status(204).end();
 });
