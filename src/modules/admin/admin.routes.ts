@@ -11,6 +11,7 @@ import { prisma } from "../../lib/prisma.ts";
 import { syncSalesInBackground } from "../../lib/sales.ts";
 import { serializeCategory, serializeOrder, serializeProduct } from "../../lib/serialize.ts";
 import { requireAccess } from "../../lib/admin-access.ts";
+import { normaliseFinishes } from "../../lib/variants.ts";
 import { requireAdmin } from "../../middleware/auth.ts";
 import { followNewCategory, notifyForNewProductInBackground } from "../alerts/alerts.service.ts";
 import { markOrderPaid, orderInclude } from "../orders/orders.service.ts";
@@ -50,6 +51,9 @@ const variant = z.object({
   label: z.string().trim().min(1).max(120),
   swatch: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
   inStock: z.boolean().default(true),
+  /** A version's own photo and count — see lib/variants.ts. */
+  photo: z.string().trim().min(1).max(500).optional(),
+  stock: z.number().int().min(0).max(100000).optional(),
 });
 const moneyInput = z.object({ ngn: z.number().nonnegative(), usd: z.number().nonnegative() });
 
@@ -94,9 +98,13 @@ function assertDiscount(price: { ngn: number; usd: number }, compareAt: { ngn: n
 
 /** API shape → columns. Only fields present in the input are returned, so it serves PATCH too. */
 function productColumns<T extends Partial<ProductInput>>(input: T) {
-  const { price, compareAt, category, sizes, ...rest } = input;
+  const { price, compareAt, category, sizes, finishes, ...rest } = input;
+  // Versions with their own stock set the product's total.
+  const variants = finishes ? normaliseFinishes(finishes) : null;
   return {
     ...rest,
+    ...(variants && { finishes: variants.finishes }),
+    ...(variants && variants.stock !== null && { stock: variants.stock }),
     ...(category !== undefined && { categorySlug: category }),
     ...(price && { priceKobo: toMinor(price.ngn), priceCents: toMinor(price.usd) }),
     ...(compareAt !== undefined && {
@@ -169,6 +177,8 @@ adminRouter.post("/products", async (req, res) => {
   const product = await prisma.product.create({
     data: {
       ...productColumns(input),
+      // Always present on create (the schema defaults it); restated for the types.
+      finishes: normaliseFinishes(input.finishes).finishes,
       slug: input.slug ?? (await uniqueSlug(input.name)),
       sku: input.sku ?? (await nextSku(input.category)),
       categorySlug: input.category,

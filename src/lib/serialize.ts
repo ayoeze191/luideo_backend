@@ -6,7 +6,8 @@ import { money, optionalMoney } from "./money.ts";
 /* Shapes returned here match frontend/src/lib/types.ts, so the storefront can
  * swap its mock data for API calls without touching its components. */
 
-export type Variant = { id: string; label: string; swatch?: string; inStock: boolean };
+import type { Variant } from "./variants.ts";
+export type { Variant };
 
 /** Pieces added within this many days carry the "New" label. */
 const NEW_FOR_DAYS = 30;

@@ -1,4 +1,5 @@
 import { env } from "../../config/env.ts";
+import { hasVariantStock, takeFromVariant } from "../../lib/variants.ts";
 import * as emails from "../../emails/templates.ts";
 import type { Currency, Order, OrderItem, User } from "../../generated/prisma/client.ts";
 import {
@@ -69,6 +70,7 @@ export async function createOrder(input: CheckoutInput, user?: User) {
   const byId = new Map(products.map((p) => [p.id, p]));
 
   const wanted = new Map<string, number>();
+  const wantedVariant = new Map<string, number>();
   const lines = input.items.map((item) => {
     const product = byId.get(item.productId);
     if (!product) throw badRequest("One of the pieces in your bag is no longer available.", "PRODUCT_UNAVAILABLE");
@@ -79,6 +81,20 @@ export async function createOrder(input: CheckoutInput, user?: User) {
     const sizes = product.sizes as Variant[] | null;
     const size = sizes?.find((s) => s.id === item.sizeId);
     if (sizes?.length && !size?.inStock) throw badRequest(`Please choose an available option for ${product.name}.`, "VARIANT_UNAVAILABLE");
+
+    // A version with its own stock is checked on its own, then the product's total.
+    if (typeof finish.stock === "number") {
+      const key = `${product.id}:${finish.id}`;
+      wantedVariant.set(key, (wantedVariant.get(key) ?? 0) + item.quantity);
+      if (wantedVariant.get(key)! > finish.stock) {
+        throw badRequest(
+          finish.stock === 0
+            ? `${product.name} (${finish.label}) is sold out.`
+            : `Only ${finish.stock} of ${product.name} (${finish.label}) left.`,
+          "OUT_OF_STOCK",
+        );
+      }
+    }
 
     wanted.set(product.id, (wanted.get(product.id) ?? 0) + item.quantity);
     if (wanted.get(product.id)! > product.stock) {
@@ -92,7 +108,8 @@ export async function createOrder(input: CheckoutInput, user?: User) {
       productId: product.id,
       name: product.name,
       slug: product.slug,
-      photo: product.photo,
+      // The version they chose, as it looks.
+      photo: finish.photo ?? product.photo,
       category: product.categorySlug,
       collection: product.collection,
       material: product.material,
@@ -217,6 +234,19 @@ export async function markOrderPaid(reference: string, payment: { amountMinor: n
     await tx.orderEvent.create({ data: { orderId: order.id, label: "Payment confirmed" } });
     for (const item of order.items) {
       if (!item.productId) continue;
+
+      // Versions with their own stock: take it off that version, and the total follows.
+      const product = await tx.product.findUnique({ where: { id: item.productId }, select: { finishes: true } });
+      const finishes = (product?.finishes ?? []) as Variant[];
+      if (hasVariantStock(finishes)) {
+        const next = takeFromVariant(finishes, item.finishId, item.quantity);
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { finishes: next.finishes, stock: next.stock ?? 0, unitsSold: { increment: item.quantity } },
+        });
+        continue;
+      }
+
       const { count: decremented } = await tx.product.updateMany({
         where: { id: item.productId, stock: { gte: item.quantity } },
         data: { stock: { decrement: item.quantity }, unitsSold: { increment: item.quantity } },
