@@ -1,4 +1,4 @@
-// Lui'Deo — database schema.
+// lui'Deo — database schema.
 //
 // Money is stored in minor units (kobo / cents) for both currencies, because
 // prices are authored per currency rather than converted. The API turns these

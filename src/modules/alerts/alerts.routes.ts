@@ -11,7 +11,7 @@ const page = (title: string, body: string) => `<!doctype html><html><head><meta 
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title></head>
 <body style="font-family:Georgia,serif;background:#f6f1ea;color:#1c1917;display:grid;place-items:center;min-height:100vh;margin:0;padding:16px">
 <div style="max-width:420px;text-align:center"><p style="font-size:26px">${title}</p><p style="line-height:1.6">${body}</p>
-<p><a href="${env.FRONTEND_URL}" style="color:#1c1917">Back to Lui'Deo</a></p></div></body></html>`;
+<p><a href="${env.FRONTEND_URL}" style="color:#1c1917">Back to lui'Deo</a></p></div></body></html>`;
 
 const subscribeLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,

@@ -12,7 +12,7 @@ syncSalesInBackground();
 startPhotoSweep();
 
 const server = createApp().listen(env.PORT, () => {
-  console.log(`Lui'Deo API listening on ${env.API_URL} (port ${env.PORT})`);
+  console.log(`lui'Deo API listening on ${env.API_URL} (port ${env.PORT})`);
 });
 
 async function shutdown(signal: string) {

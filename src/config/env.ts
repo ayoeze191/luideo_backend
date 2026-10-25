@@ -28,7 +28,7 @@ const schema = z.object({
   SMTP_PORT: z.coerce.number().default(587),
   SMTP_USER: optional,
   SMTP_PASS: optional,
-  MAIL_FROM: z.string().default("Lui'Deo <hello@luideo.com>"),
+  MAIL_FROM: z.string().default("lui'Deo <hello@luideo.com>"),
   STUDIO_EMAIL: optional,
 
   /** Flutterwave dashboard → Settings → API keys → Secret key (FLWSECK_TEST-… or FLWSECK-…). */

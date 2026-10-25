@@ -55,7 +55,7 @@ ${right ? `<td style="${cell};text-align:right;white-space:nowrap;font-family:${
 function layout(body: string, footer = "", options: { preheader?: string; hero?: { src: string; alt: string } } = {}) {
   const link = (href: string, label: string) => `<a href="${href}" style="color:${C.stone};text-decoration:underline">${label}</a>`;
   return `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Lui'Deo</title></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>lui'Deo</title></head>
 <body style="margin:0;padding:0;background:${C.cream};-webkit-text-size-adjust:100%">
 ${options.preheader ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:${C.cream}">${escape(options.preheader)}&#8199;&#65279;&#847;&#8199;&#65279;&#847;</div>` : ""}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${C.cream}">
@@ -63,7 +63,7 @@ ${options.preheader ? `<div style="display:none;max-height:0;overflow:hidden;opa
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px">
     <tr><td align="center" style="padding:0 0 24px">
       <a href="${env.FRONTEND_URL}" style="text-decoration:none">
-        <img src="${asset("/logo/wordmark-black.png")}" width="132" alt="Lui'Deo Jewelry" style="display:block;border:0;width:132px;height:auto;font-family:${SERIF};font-size:22px;color:${C.ink}">
+        <img src="${asset("/logo/wordmark-black.png")}" width="132" alt="lui'Deo Jewelry" style="display:block;border:0;width:132px;height:auto;font-family:${SERIF};font-size:22px;color:${C.ink}">
       </a>
     </td></tr>
     <tr><td style="background:${C.card};border:1px solid ${C.line};border-radius:14px;overflow:hidden">
@@ -102,7 +102,7 @@ export function welcome(to: string, name: string, verifyToken?: string): Mail {
 <td style="padding:0 0 14px;font-family:${SANS};font-size:15px;line-height:1.55;color:${C.soft}"><strong style="color:${C.ink}">${title}</strong><br>${text}</td></tr>`;
   const body =
     heading(`Welcome, ${firstName(name)}`) +
-    p("Thank you for joining Lui'Deo. Every piece we make — coral beads, pearls, bridal sets — is strung by hand in Lagos, and very often made just for the person wearing it.") +
+    p("Thank you for joining lui'Deo. Every piece we make — coral beads, pearls, bridal sets — is strung by hand in Lagos, and very often made just for the person wearing it.") +
     (verifyLink
       ? p("One quick thing: please confirm your email so we can send your receipts and order updates.") +
         button(verifyLink, "Confirm my email") +
@@ -118,18 +118,18 @@ ${perk("Hear about new pieces first", `Turn on <a href="${env.FRONTEND_URL}/acco
     divider +
     p(`Want something made for your day — matched to your aso-oke, gele or gown? <a href="${STUDIO.whatsapp}" style="color:${C.gold}">Message us on WhatsApp</a> and we'll design it with you.`) +
     (verifyLink ? "" : button(`${env.FRONTEND_URL}/shop`, "Browse the collection")) +
-    `<p style="margin:24px 0 0;font-family:${SERIF};font-size:17px;font-style:italic;color:${C.ink}">With love,<br>Lui'Deo</p>`;
+    `<p style="margin:24px 0 0;font-family:${SERIF};font-size:17px;font-style:italic;color:${C.ink}">With love,<br>lui'Deo</p>`;
   return {
     to,
-    subject: `Welcome to Lui'Deo, ${name.trim().split(/\s+/)[0] || name}`,
+    subject: `Welcome to lui'Deo, ${name.trim().split(/\s+/)[0] || name}`,
     html: layout(body, "", {
       preheader: verifyLink ? "Confirm your email and see what your account can do." : "Your account is ready — here's what you can do with it.",
-      hero: { src: asset("/brand/email-welcome.jpg"), alt: "A red coral bead necklace and bracelet from Lui'Deo" },
+      hero: { src: asset("/brand/email-welcome.jpg"), alt: "A red coral bead necklace and bracelet from lui'Deo" },
     }),
     text: [
       `Welcome, ${name}!`,
       "",
-      "Thank you for joining Lui'Deo. Every piece we make is strung by hand in Lagos.",
+      "Thank you for joining lui'Deo. Every piece we make is strung by hand in Lagos.",
       ...(verifyLink ? ["", `Please confirm your email (link works for 24 hours): ${verifyLink}`] : []),
       "",
       "With your account you can track every order, keep a wishlist, and turn on new-piece alerts.",
@@ -138,7 +138,7 @@ ${perk("Hear about new pieces first", `Turn on <a href="${env.FRONTEND_URL}/acco
       `Shop: ${env.FRONTEND_URL}/shop`,
       "",
       "With love,",
-      "Lui'Deo",
+      "lui'Deo",
     ].join("\n"),
   };
 }
@@ -147,7 +147,7 @@ export function verifyEmail(to: string, name: string, token: string): Mail {
   const link = `${env.FRONTEND_URL}/account/verify?token=${encodeURIComponent(token)}`;
   return {
     to,
-    subject: "Confirm your email — Lui'Deo",
+    subject: "Confirm your email — lui'Deo",
     html: layout(heading("Confirm your email") + p(`Hello ${firstName(name)}, please confirm this is your email address so we can send your receipts and order updates.`) + button(link, "Confirm my email") + small("The link works for 24 hours."), "", { preheader: "One click to confirm your email." }),
     text: `Hello ${name},\n\nConfirm your email address: ${link}\n\nThis link expires in 24 hours.`,
   };
@@ -157,8 +157,8 @@ export function resetPassword(to: string, name: string, token: string): Mail {
   const link = `${env.FRONTEND_URL}/account/reset-password?token=${encodeURIComponent(token)}`;
   return {
     to,
-    subject: "Reset your password — Lui'Deo",
-    html: layout(heading("Reset your password") + p(`Hello ${firstName(name)}, someone asked to reset the password on your Lui'Deo account. If that was you:`) + button(link, "Choose a new password") + small("The link works for one hour. If you didn't ask for this, you can ignore this email — your password won't change."), "", { preheader: "A link to choose a new password." }),
+    subject: "Reset your password — lui'Deo",
+    html: layout(heading("Reset your password") + p(`Hello ${firstName(name)}, someone asked to reset the password on your lui'Deo account. If that was you:`) + button(link, "Choose a new password") + small("The link works for one hour. If you didn't ask for this, you can ignore this email — your password won't change."), "", { preheader: "A link to choose a new password." }),
     text: `Hello ${name},\n\nReset your password: ${link}\n\nThe link expires in one hour. If you didn't ask for this, ignore this email.`,
   };
 }
@@ -181,7 +181,7 @@ export function orderReceipt(order: {
   const rows = order.lines.map((l) => itemRow(l)).join("");
   return {
     to: order.email,
-    subject: `Order ${order.reference} confirmed — Lui'Deo`,
+    subject: `Order ${order.reference} confirmed — lui'Deo`,
     html: layout(
       heading(`Thank you, ${firstName(order.name)}`) +
         p(opening) +
@@ -196,7 +196,7 @@ export function orderReceipt(order: {
 export function orderStatusUpdate(to: string, name: string, reference: string, status: string): Mail {
   return {
     to,
-    subject: `Order ${reference}: ${status} — Lui'Deo`,
+    subject: `Order ${reference}: ${status} — lui'Deo`,
     html: layout(
       heading(`Your order is ${escape(status.toLowerCase())}`) +
         p(`Hello ${firstName(name)}, a quick update: order <b style="color:${C.ink}">${reference}</b> is now <b style="color:${C.ink}">${escape(status.toLowerCase())}</b>.`) +
@@ -266,7 +266,7 @@ export function newOrderForStudio(
 export function manualPaymentPending(order: { reference: string; name: string; email: string; totalLabel: string; orderUrl: string }): Mail {
   return {
     to: order.email,
-    subject: `Order ${order.reference}: send ${order.totalLabel} to complete it — Lui'Deo`,
+    subject: `Order ${order.reference}: send ${order.totalLabel} to complete it — lui'Deo`,
     html: layout(
       heading(`Thank you, ${firstName(order.name)}`) +
         p(`Your order <b style="color:${C.ink}">${order.reference}</b> is reserved. To complete it, send <b style="color:${C.ink}">${escape(order.totalLabel)}</b> by Zelle, Cash App, Apple Cash or U.S. wire, then upload a screenshot of the receipt.`) +
@@ -312,7 +312,7 @@ export function similarProductAlert(input: {
   const manage = `${env.FRONTEND_URL}/account/alerts`;
   return {
     to: input.to,
-    subject: `New at Lui'Deo: ${input.productName}`,
+    subject: `New at lui'Deo: ${input.productName}`,
     headers: {
       "List-Unsubscribe": `<${unsubscribe}>`,
       "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
@@ -349,7 +349,7 @@ export function contactReceived(m: { name: string; email: string; subject: strin
     : "Thank you for your message. Someone from the studio will reply within one working day.";
   return {
     to: m.email,
-    subject: custom ? "We've received your custom order request — Lui'Deo" : "We've received your message — Lui'Deo",
+    subject: custom ? "We've received your custom order request — lui'Deo" : "We've received your message — lui'Deo",
     html: layout(
       heading(custom ? "We've got your request" : "We've got your message") +
         p(`Hello ${firstName(m.name)}, ${opening.charAt(0).toLowerCase()}${opening.slice(1)}`) +
@@ -365,7 +365,7 @@ export function newsletterWelcome(to: string, unsubscribeToken: string): Mail {
   const unsubscribe = `${env.API_URL}/api/alerts/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}`;
   return {
     to,
-    subject: "You're on the list — Lui'Deo",
+    subject: "You're on the list — lui'Deo",
     headers: {
       "List-Unsubscribe": `<${unsubscribe}>`,
       "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",

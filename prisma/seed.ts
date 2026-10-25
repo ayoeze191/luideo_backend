@@ -125,7 +125,7 @@ export {};
 //       where: { email },
 //       create: {
 //         email,
-//         name: ADMIN_NAME || "Lui'Deo Studio",
+//         name: ADMIN_NAME || "lui'Deo Studio",
 //         role: "ADMIN",
 //         adminAccess: [...ADMIN_AREAS],
 //         emailVerifiedAt: new Date(),

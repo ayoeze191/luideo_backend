@@ -55,7 +55,7 @@ export async function initializePayment(order: Order, returnUrl: string) {
       currency: order.currency,
       redirect_url: returnUrl,
       customer: { email: order.email, name: order.name, phonenumber: order.phone },
-      customizations: { title: "Lui'Deo Jewelry", description: `Order ${order.reference}` },
+      customizations: { title: "lui'Deo Jewelry", description: `Order ${order.reference}` },
       meta: { order_reference: order.reference },
     }),
   });
