@@ -14,7 +14,7 @@
     },
     {
       "slug": "stones",
-      "name": "Antique",
+      "name": "Stone & gold",
       "blurb": "Emerald, amethyst and cabochon stones set in cast gold.",
       "photo": "emerald-set"
     },
@@ -26,13 +26,13 @@
     },
     {
       "slug": "earrings",
-      "name": "Dainty Coral",
+      "name": "Earrings",
       "blurb": "Statement drops and gold-set studs, sold on their own.",
       "photo": "pearl-earrings"
     },
     {
       "slug": "wrist",
-      "name": "The Icons",
+      "name": "Bracelets & rings",
       "blurb": "Cuffs, wrist beads and cast stone rings.",
       "photo": "amethyst-set"
     },
