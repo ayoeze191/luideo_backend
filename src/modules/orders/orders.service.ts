@@ -176,6 +176,19 @@ export async function createOrder(input: CheckoutInput, user?: User) {
     else await subscribeGuest(email);
   }
 
+  // Manual payments have no gateway page to come back to, so the customer gets a link to their order.
+  if (order.paymentProvider === "MANUAL_US") {
+    sendMailInBackground(
+      emails.manualPaymentPending({
+        reference: order.reference,
+        name: order.name,
+        email: order.email,
+        totalLabel: formatPrice(order.totalCents, "USD"),
+        orderUrl: paymentReturnUrl(order, guestToken),
+      }),
+    );
+  }
+
   return { order, guestToken };
 }
 
@@ -216,11 +229,21 @@ export async function savePaymentReceipt(file: Buffer, ext: string) {
   return saveReceiptUpload(file, ext);
 }
 
-export async function attachPaymentReceipt(orderId: string, receiptUrl: string) {
+export async function attachPaymentReceipt(order: Order, receiptUrl: string) {
   await prisma.$transaction([
-    prisma.order.update({ where: { id: orderId }, data: { paymentReceiptUrl: receiptUrl } }),
-    prisma.orderEvent.create({ data: { orderId, label: "Payment receipt submitted" } }),
+    prisma.order.update({ where: { id: order.id }, data: { paymentReceiptUrl: receiptUrl } }),
+    prisma.orderEvent.create({ data: { orderId: order.id, label: "Payment receipt submitted" } }),
   ]);
+  if (env.STUDIO_EMAIL) {
+    sendMailInBackground(
+      emails.receiptForStudio(env.STUDIO_EMAIL, {
+        reference: order.reference,
+        name: order.name,
+        email: order.email,
+        totalLabel: formatPrice(order.currency === "NGN" ? order.totalKobo : order.totalCents, order.currency),
+      }),
+    );
+  }
 }
 
 /**

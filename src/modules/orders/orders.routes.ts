@@ -101,7 +101,7 @@ ordersRouter.post(
       throw badRequest("Upload a JPEG, PNG or WebP image under 10MB.", "UPLOAD_TYPE");
     }
     const receiptUrl = await orders.savePaymentReceipt(req.body, ext);
-    await orders.attachPaymentReceipt(order.id, receiptUrl);
+    await orders.attachPaymentReceipt(order, receiptUrl);
     res.status(201).json({ receiptSubmitted: true });
   },
 );
