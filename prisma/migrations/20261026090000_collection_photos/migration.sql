@@ -1,0 +1,1 @@
+ALTER TABLE "CatalogOption" ADD COLUMN IF NOT EXISTS "photo" TEXT;

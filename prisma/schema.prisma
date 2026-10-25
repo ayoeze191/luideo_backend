@@ -404,6 +404,8 @@ model CatalogOption {
   name      String
   /// Shown with collections in the shop and footer.
   blurb     String            @default("")
+  /// Collections only: the banner photo at the top of the shop when browsing it.
+  photo     String?
   sortOrder Int               @default(0)
   createdAt DateTime          @default(now())
 

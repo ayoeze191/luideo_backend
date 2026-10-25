@@ -32,7 +32,7 @@ adminRouter.use("/stats", requireAccess("dashboard"));
 adminRouter.use("/orders", (req, res, next) =>
   req.method === "GET" && req.path === "/" ? requireAccess("orders", "dashboard")(req, res, next) : requireAccess("orders")(req, res, next),
 );
-adminRouter.use(["/products", "/categories", "/options"], requireAccess("products"));
+adminRouter.use(["/products", "/categories", "/options", "/collections"], requireAccess("products"));
 adminRouter.use("/customers", requireAccess("customers"));
 adminRouter.use("/messages", requireAccess("messages"));
 adminRouter.use("/gallery", requireAccess("gallery"), adminGalleryRouter);
@@ -232,7 +232,7 @@ const categorySchema = z.object({
   slug: z.string().trim().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/).max(60).optional(),
   name: z.string().trim().min(1).max(80),
   blurb: z.string().trim().max(300).default(""),
-  photo: z.string().trim().max(200).nullable().optional(),
+  photo: z.string().trim().max(500).nullable().optional(),
   sortOrder: z.number().int().default(0),
 });
 
@@ -253,9 +253,122 @@ adminRouter.post("/categories", async (req, res) => {
 });
 
 adminRouter.patch("/categories/:slug", async (req, res) => {
-  const { slug: _, ...data } = categorySchema.partial().parse(req.body);
+  // No defaults here: a field left out stays as it is.
+  const data = z
+    .object({
+      name: z.string().trim().min(1).max(80),
+      blurb: z.string().trim().max(300),
+      photo: z.string().trim().max(500).nullable(),
+      sortOrder: z.number().int(),
+    })
+    .partial()
+    .parse(req.body);
+  const before = await prisma.category.findUnique({ where: { slug: req.params.slug } });
+  if (!before) throw notFound("That category no longer exists.");
   const category = await prisma.category.update({ where: { slug: req.params.slug }, data });
+  if (data.photo !== undefined && before.photo !== category.photo) cleanupPhotosInBackground([before.photo]);
   res.json({ category: serializeCategory(category) });
+});
+
+/** For the admin's Collections page: every category with how many pieces use it. */
+adminRouter.get("/categories", async (_req, res) => {
+  const rows = await prisma.category.findMany({ orderBy: { sortOrder: "asc" }, include: { _count: { select: { products: true } } } });
+  res.json({ categories: rows.map((c) => ({ ...serializeCategory(c), productCount: c._count.products })) });
+});
+
+const reorderSchema = z.object({ ids: z.array(z.string()).min(1).max(200) });
+
+adminRouter.post("/categories/reorder", async (req, res) => {
+  const { ids } = reorderSchema.parse(req.body);
+  await prisma.$transaction(ids.map((slug, i) => prisma.category.update({ where: { slug }, data: { sortOrder: i + 1 } })));
+  res.status(204).end();
+});
+
+/** Only an empty category can go; its pieces would have nowhere to live. */
+adminRouter.delete("/categories/:slug", async (req, res) => {
+  const category = await prisma.category.findUnique({ where: { slug: req.params.slug }, include: { _count: { select: { products: true } } } });
+  if (!category) throw notFound("That category no longer exists.");
+  const n = category._count.products;
+  if (n > 0) throw badRequest(`${n} ${n === 1 ? "piece is" : "pieces are"} in "${category.name}". Move ${n === 1 ? "it" : "them"} to another category first.`, "CATEGORY_IN_USE");
+  await prisma.category.delete({ where: { slug: category.slug } });
+  await prisma.$executeRaw`UPDATE "AlertSubscription" SET "categories" = array_remove("categories", ${category.slug})`;
+  cleanupPhotosInBackground([category.photo]);
+  res.status(204).end();
+});
+
+/* ------------------------------------------------------------ Collections */
+
+const collectionSchema = z.object({
+  name: z.string().trim().min(1).max(60),
+  blurb: z.string().trim().max(300).default(""),
+  photo: z.string().trim().max(500).nullable().optional(),
+});
+
+async function collectionRows() {
+  const [rows, counts] = await Promise.all([
+    prisma.catalogOption.findMany({ where: { kind: "COLLECTION" }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
+    prisma.product.groupBy({ by: ["collection"], _count: { _all: true } }),
+  ]);
+  const count = new Map(counts.map((c) => [c.collection, c._count._all]));
+  return rows.map((c) => ({ id: c.id, name: c.name, blurb: c.blurb, photo: c.photo ?? undefined, productCount: count.get(c.name) ?? 0 }));
+}
+
+adminRouter.get("/collections", async (_req, res) => {
+  res.json({ collections: await collectionRows() });
+});
+
+adminRouter.post("/collections", async (req, res) => {
+  const input = collectionSchema.parse(req.body);
+  const clash = await prisma.catalogOption.findFirst({ where: { kind: "COLLECTION", name: { equals: input.name, mode: "insensitive" } } });
+  if (clash) throw badRequest(`There's already a collection called "${clash.name}".`, "COLLECTION_EXISTS");
+  const option = await addOption("COLLECTION", input.name, input.blurb);
+  if (input.photo) await prisma.catalogOption.update({ where: { id: option.id }, data: { photo: input.photo } });
+  res.status(201).json({ collections: await collectionRows() });
+});
+
+/** Renaming carries the pieces (and anyone following it) over to the new name. */
+adminRouter.patch("/collections/:id", async (req, res) => {
+  // No defaults here: a field left out stays as it is.
+  const data = z
+    .object({ name: z.string().trim().min(1).max(60), blurb: z.string().trim().max(300), photo: z.string().trim().max(500).nullable() })
+    .partial()
+    .parse(req.body);
+  const before = await prisma.catalogOption.findFirst({ where: { id: req.params.id, kind: "COLLECTION" } });
+  if (!before) throw notFound("That collection no longer exists.");
+  const name = data.name?.replace(/\s+/g, " ");
+  if (name && name !== before.name) {
+    const clash = await prisma.catalogOption.findFirst({
+      where: { kind: "COLLECTION", id: { not: before.id }, name: { equals: name, mode: "insensitive" } },
+    });
+    if (clash) throw badRequest(`There's already a collection called "${clash.name}".`, "COLLECTION_EXISTS");
+  }
+  await prisma.$transaction(async (tx) => {
+    await tx.catalogOption.update({ where: { id: before.id }, data: { ...data, ...(name && { name }) } });
+    if (name && name !== before.name) {
+      await tx.product.updateMany({ where: { collection: before.name }, data: { collection: name } });
+      await tx.$executeRaw`UPDATE "AlertSubscription" SET "collections" = array_replace("collections", ${before.name}, ${name})`;
+    }
+  });
+  if (data.photo !== undefined && data.photo !== before.photo) cleanupPhotosInBackground([before.photo]);
+  res.json({ collections: await collectionRows() });
+});
+
+adminRouter.post("/collections/reorder", async (req, res) => {
+  const { ids } = reorderSchema.parse(req.body);
+  await prisma.$transaction(ids.map((id, i) => prisma.catalogOption.update({ where: { id }, data: { sortOrder: i + 1 } })));
+  res.status(204).end();
+});
+
+/** Only an empty collection can go; pieces must name one. */
+adminRouter.delete("/collections/:id", async (req, res) => {
+  const option = await prisma.catalogOption.findFirst({ where: { id: req.params.id, kind: "COLLECTION" } });
+  if (!option) throw notFound("That collection no longer exists.");
+  const n = await prisma.product.count({ where: { collection: option.name } });
+  if (n > 0) throw badRequest(`${n} ${n === 1 ? "piece is" : "pieces are"} in "${option.name}". Move ${n === 1 ? "it" : "them"} to another collection first.`, "COLLECTION_IN_USE");
+  await prisma.catalogOption.delete({ where: { id: option.id } });
+  await prisma.$executeRaw`UPDATE "AlertSubscription" SET "collections" = array_remove("collections", ${option.name})`;
+  cleanupPhotosInBackground([option.photo]);
+  res.status(204).end();
 });
 
 /** Add a collection or material from the product form. Returns the existing one if it's already there. */

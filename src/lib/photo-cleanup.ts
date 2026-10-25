@@ -39,7 +39,7 @@ export function publicIdOf(url: string | null | undefined): string | null {
 
 /** Every photo something on the site still points at, as Cloudinary ids. */
 async function inUse(): Promise<Set<string>> {
-  const [products, items, gallery, categories, posts, receipts] = await Promise.all([
+  const [products, items, gallery, categories, posts, receipts, collections] = await Promise.all([
     prisma.product.findMany({ select: { photo: true, gallery: true, finishes: true } }),
     prisma.orderItem.findMany({ where: { photo: { not: null } }, select: { photo: true }, distinct: ["photo"] }),
     prisma.galleryPhoto.findMany({ select: { url: true } }),
@@ -47,6 +47,7 @@ async function inUse(): Promise<Set<string>> {
     prisma.socialPost.findMany({ where: { status: { not: "POSTED" } }, select: { imageUrl: true } }),
     // Payment receipts share the upload folder and must be kept as proof of payment.
     prisma.order.findMany({ where: { paymentReceiptUrl: { not: null } }, select: { paymentReceiptUrl: true } }),
+    prisma.catalogOption.findMany({ where: { photo: { not: null } }, select: { photo: true } }),
   ]);
 
   const urls: (string | null | undefined)[] = [
@@ -56,6 +57,7 @@ async function inUse(): Promise<Set<string>> {
     ...categories.map((c) => c.photo),
     ...posts.map((s) => s.imageUrl),
     ...receipts.map((o) => o.paymentReceiptUrl),
+    ...collections.map((c) => c.photo),
   ];
   return new Set(urls.map(publicIdOf).filter((id): id is string => !!id));
 }

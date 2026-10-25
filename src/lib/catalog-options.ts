@@ -6,7 +6,7 @@ import { prisma } from "./prisma.ts";
  * them while creating a piece. Products store the option's name. */
 
 export async function listOptions(kind: CatalogOptionKind) {
-  return prisma.catalogOption.findMany({ where: { kind }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }], select: { name: true, blurb: true } });
+  return prisma.catalogOption.findMany({ where: { kind }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }], select: { name: true, blurb: true, photo: true } });
 }
 
 export async function optionNames(kind: CatalogOptionKind) {
