@@ -20,6 +20,7 @@ import { socialRouter } from "../social/social.routes.ts";
 import { uploadsRouter } from "../uploads/uploads.ts";
 import { teamRouter } from "../team/team.routes.ts";
 import { adminGalleryRouter } from "../gallery/gallery.routes.ts";
+import { adminPaymentDetailsRouter } from "../settings/payment-details.routes.ts";
 import { dashboardStats } from "./stats.ts";
 
 export const adminRouter = Router();
@@ -35,6 +36,7 @@ adminRouter.use(["/products", "/categories", "/options"], requireAccess("product
 adminRouter.use("/customers", requireAccess("customers"));
 adminRouter.use("/messages", requireAccess("messages"));
 adminRouter.use("/gallery", requireAccess("gallery"), adminGalleryRouter);
+adminRouter.use("/payment-details", requireAccess("payments"), adminPaymentDetailsRouter);
 
 adminRouter.use("/social", requireAccess("social"), socialRouter);
 adminRouter.use("/team", teamRouter);

@@ -15,6 +15,7 @@ import { authRouter } from "./modules/auth/auth.routes.ts";
 import { catalogRouter } from "./modules/catalog/catalog.routes.ts";
 import { contactRouter } from "./modules/contact/contact.routes.ts";
 import { ordersRouter } from "./modules/orders/orders.routes.ts";
+import { paymentDetailsRouter } from "./modules/settings/payment-details.routes.ts";
 import { webhooksRouter } from "./modules/payments/webhooks.routes.ts";
 import { socialOAuthRouter } from "./modules/social/social.routes.ts";
 import { inviteRouter } from "./modules/team/team.routes.ts";
@@ -55,6 +56,7 @@ export function createApp() {
   app.use("/api", catalogRouter);
   app.use("/api/gallery", galleryRouter);
   app.use("/api/orders", ordersRouter);
+  app.use("/api/payment-details", paymentDetailsRouter);
   app.use("/api/me", accountRouter);
   app.use("/api/alerts", alertsRouter);
   app.use("/api/contact", contactRouter);

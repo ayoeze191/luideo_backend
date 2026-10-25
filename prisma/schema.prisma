@@ -424,3 +424,11 @@ model AdminInvite {
   usedById    String?
   createdAt   DateTime  @default(now())
 }
+
+/// Small pieces of shop configuration the admin edits, one JSON value per key
+/// (e.g. "payment-details": where customers send Zelle, Apple Cash and wire payments).
+model StoreSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}

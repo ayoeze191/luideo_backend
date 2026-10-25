@@ -8,7 +8,7 @@ import { forbidden, unauthorized } from "./http-error.ts";
  * SUPER_ADMIN always has every area (and the Team page on top).
  * ------------------------------------------------------------------ */
 
-export const ADMIN_AREAS = ["dashboard", "orders", "products", "customers", "social", "messages", "gallery"] as const;
+export const ADMIN_AREAS = ["dashboard", "orders", "products", "customers", "social", "messages", "gallery", "payments"] as const;
 export type AdminArea = (typeof ADMIN_AREAS)[number];
 
 export function hasAccess(user: Pick<User, "role" | "adminAccess"> | undefined, area: AdminArea) {

@@ -5,6 +5,7 @@ import type { Currency, Order, OrderItem, User } from "../../generated/prisma/cl
 import {
   PAYMENT_METHODS,
   SHIPPING_METHODS,
+  shippingPrice,
   type PaymentMethodId,
 } from "../../lib/catalog.ts";
 import { HttpError, badRequest } from "../../lib/http-error.ts";
@@ -132,8 +133,9 @@ export async function createOrder(input: CheckoutInput, user?: User) {
   const subtotalCents = lines.reduce((n, l) => n + l.unitCents * l.quantity, 0);
 
   // The threshold is judged in the currency the customer is paying in.
-  const shippingKobo = toMinor(shipping.price.ngn);
-  const shippingCents = toMinor(shipping.price.usd);
+  const shippingCost = shippingPrice(shipping, lines.reduce((n, l) => n + l.quantity, 0));
+  const shippingKobo = toMinor(shippingCost.ngn);
+  const shippingCents = toMinor(shippingCost.usd);
   const etaDays = Math.max(...lines.map((l) => l.leadDays)) + shipping.transitDays;
 
   const guestToken = randomToken();

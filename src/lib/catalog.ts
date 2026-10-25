@@ -21,13 +21,21 @@ export type ShippingMethod = {
    */
   zone?: "lagos" | "outside-lagos";
   areas?: string[];
+  /** A lower price for small orders: up to `maxPieces` pieces in total. */
+  smallOrder?: { maxPieces: number; price: { ngn: number; usd: number } };
 };
+
+/** What a shipping method costs for an order of `pieces` pieces in total. */
+export function shippingPrice(method: ShippingMethod, pieces: number) {
+  return method.smallOrder && pieces <= method.smallOrder.maxPieces ? method.smallOrder.price : method.price;
+}
 
 /* ------------------------------------------------------------------ *
  * Delivery prices, from the studio's own rate card. Within Lagos the
  * price depends on the area; the rest of Nigeria is one price; pickup is
  * free. There's no free delivery, whatever the order size. U.S. delivery is
- * a flat $40; the listed European and African countries are a flat $80.
+ * $18 for up to two pieces and $40 above that; the listed European and
+ * African countries are a flat $80.
  *
  * To change a price, change `ngn` here; `usd` follows from it (for
  * customers paying in dollars for a Nigerian address).
@@ -102,8 +110,9 @@ export const SHIPPING_METHODS: ShippingMethod[] = [
   {
     id: "us-delivery",
     name: "United States delivery",
-    detail: "Flat-rate delivery to the United States",
+    detail: "$18 for up to 2 pieces, $40 for 3 or more",
     price: { ngn: 40 * USD_RATE, usd: 40 },
+    smallOrder: { maxPieces: 2, price: { ngn: 18 * USD_RATE, usd: 18 } },
     regions: ["United States"],
     transitDays: 10,
   },
