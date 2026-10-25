@@ -93,6 +93,8 @@ export function serializeOrder(o: FullOrder, { internal = false } = {}) {
     payment: PAYMENT_STATUS_LABEL[o.paymentStatus],
     paymentMethod:
       PAYMENT_METHODS.find((m) => m.provider === o.paymentProvider)?.label ?? ({ COD: "Pay on delivery", PAYSTACK: "Paystack" }[o.paymentProvider as string] ?? o.paymentProvider),
+    receiptSubmitted: Boolean(o.paymentReceiptUrl),
+    ...(internal && o.paymentReceiptUrl ? { paymentReceiptUrl: o.paymentReceiptUrl } : {}),
     channel: o.channel,
     currency: o.currency,
     items: o.items.map((i) => ({

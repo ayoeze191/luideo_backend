@@ -1,8 +1,8 @@
-import { Router } from "express";
+import express, { Router } from "express";
 import rateLimit from "express-rate-limit";
 import { z } from "zod";
 import { PAYMENT_METHODS } from "../../lib/catalog.ts";
-import { notFound } from "../../lib/http-error.ts";
+import { badRequest, notFound } from "../../lib/http-error.ts";
 import { serializeOrder } from "../../lib/serialize.ts";
 import * as orders from "./orders.service.ts";
 
@@ -60,6 +60,11 @@ const checkoutSchema = z.object({
 ordersRouter.post("/", checkoutLimiter, async (req, res) => {
   const input = checkoutSchema.parse(req.body);
   const { order, guestToken } = await orders.createOrder(input, req.user);
+  // Manual USD payments are reviewed from the receipt; there is no gateway redirect.
+  if (order.paymentProvider === "MANUAL_US") {
+    res.status(201).json({ order: serializeOrder(order), guestToken, paymentUrl: null });
+    return;
+  }
   // If the provider hiccups, the order still exists — return it with the error
   // so the page can offer "try again" via POST /:reference/pay.
   try {
@@ -75,6 +80,31 @@ ordersRouter.post("/", checkoutLimiter, async (req, res) => {
     });
   }
 });
+
+/**
+ * A receipt is attached after a customer sends a manual USD payment. The
+ * order's guest token authorizes only its own receipt; it is returned to the
+ * studio only, never through a public order response.
+ */
+ordersRouter.post(
+  "/:reference/receipt",
+  express.raw({ type: ["image/jpeg", "image/png", "image/webp"], limit: "10mb" }),
+  async (req, res) => {
+    const token = req.get("x-guest-token");
+    const order = await orders.findOrderForViewer(String(req.params.reference), { user: req.user, guestToken: token });
+    if (!order) throw notFound("We couldn't find that order.");
+    if (order.paymentProvider !== "MANUAL_US") throw notFound();
+    if (order.paymentStatus !== "AWAITING") throw notFound("This order no longer needs a payment receipt.");
+    const contentType = req.get("content-type")?.split(";", 1)[0] ?? "";
+    const ext = ({ "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" } as Record<string, string>)[contentType];
+    if (!ext || !Buffer.isBuffer(req.body) || req.body.length === 0) {
+      throw badRequest("Upload a JPEG, PNG or WebP image under 10MB.", "UPLOAD_TYPE");
+    }
+    const receiptUrl = await orders.savePaymentReceipt(req.body, ext);
+    await orders.attachPaymentReceipt(order.id, receiptUrl);
+    res.status(201).json({ receiptSubmitted: true });
+  },
+);
 
 const trackLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,

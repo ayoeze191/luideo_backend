@@ -194,6 +194,9 @@ enum PaymentStatus {
 
 enum PaymentProvider {
   FLUTTERWAVE
+  /// A USD payment sent directly by Zelle, Apple Cash or domestic wire.
+  /// The studio checks the receipt and confirms it manually.
+  MANUAL_US
   /// No longer offered; kept so older orders still load.
   PAYSTACK
   COD
@@ -217,6 +220,8 @@ model Order {
   paymentProvider PaymentProvider
   /// Reference (tx_ref) of the latest payment attempt.
   providerRef     String?
+  /// Proof supplied for a MANUAL_US payment. This is only returned to admins.
+  paymentReceiptUrl String?
   channel         String          @default("Website")
   subtotalKobo    Int
   subtotalCents   Int

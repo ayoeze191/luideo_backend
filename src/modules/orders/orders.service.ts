@@ -16,6 +16,7 @@ import { formatPrice, type Variant } from "../../lib/serialize.ts";
 import { hashToken, orderReference, randomToken, safeEqual, signTicket, verifyTicket } from "../../lib/tokens.ts";
 import { subscribeGuest, setPreferences } from "../alerts/alerts.service.ts";
 import { initializePayment, paymentCurrencies, verifyByReference } from "../payments/flutterwave.ts";
+import { saveReceiptUpload } from "../uploads/uploads.ts";
 
 export type CheckoutInput = {
   email: string;
@@ -44,7 +45,7 @@ export async function createOrder(input: CheckoutInput, user?: User) {
   if (!(method.currencies as readonly string[]).includes(input.currency)) {
     throw badRequest(`${method.label} isn't available for ${input.currency} orders.`, "PAYMENT_CURRENCY");
   }
-  if (!paymentCurrencies().includes(input.currency)) {
+  if (method.provider === "FLUTTERWAVE" && !paymentCurrencies().includes(input.currency)) {
     throw new HttpError(503, `Online payment in ${input.currency} isn't available right now.`, "PAYMENT_DISABLED");
   }
 
@@ -187,6 +188,7 @@ export async function startPayment(order: Order, guestToken: string) {
   if (order.paymentStatus === "PAID") throw badRequest("This order is already paid.", "ALREADY_PAID");
   if (order.status === "CANCELLED") throw badRequest("This order was cancelled.", "CANCELLED");
   if (order.paymentProvider === "COD") throw badRequest("This order is paid on delivery.", "NOT_ONLINE");
+  if (order.paymentProvider === "MANUAL_US") throw badRequest("Send your payment and upload its receipt from the order page.", "MANUAL_PAYMENT");
   const { redirectUrl, providerRef } = await initializePayment(order, paymentReturnUrl(order, guestToken));
   // An older unpaid order started on Paystack is simply paid through Flutterwave now.
   await prisma.order.update({ where: { id: order.id }, data: { providerRef, paymentProvider: "FLUTTERWAVE" } });
@@ -203,6 +205,17 @@ export async function reconcilePayment(order: Order) {
     // "No transaction was found" is normal while the customer hasn't paid yet.
     console.error(`Couldn't reconcile ${order.reference}:`, err instanceof Error ? err.message : err);
   }
+}
+
+export async function savePaymentReceipt(file: Buffer, ext: string) {
+  return saveReceiptUpload(file, ext);
+}
+
+export async function attachPaymentReceipt(orderId: string, receiptUrl: string) {
+  await prisma.$transaction([
+    prisma.order.update({ where: { id: orderId }, data: { paymentReceiptUrl: receiptUrl } }),
+    prisma.orderEvent.create({ data: { orderId, label: "Payment receipt submitted" } }),
+  ]);
 }
 
 /**

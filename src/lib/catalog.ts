@@ -98,6 +98,7 @@ export const SHIPPING_METHODS: ShippingMethod[] = [
 /** Every order is paid online before it's made. (COD stays in the schema only for old orders.) */
 export const PAYMENT_METHODS = [
   { id: "flutterwave", provider: "FLUTTERWAVE", label: "Pay with Flutterwave", hint: "Card, bank transfer or USSD", currencies: ["NGN", "USD"] },
+  { id: "manual-us", provider: "MANUAL_US", label: "Pay by Zelle, Apple Cash or wire", hint: "USD only — send payment, then upload your receipt for review", currencies: ["USD"] },
 ] as const satisfies readonly { id: string; provider: string; label: string; hint: string; currencies: readonly Currency[] }[];
 
 export type PaymentMethodId = (typeof PAYMENT_METHODS)[number]["id"];

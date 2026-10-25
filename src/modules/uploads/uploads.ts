@@ -39,6 +39,13 @@ async function toDisk(file: Buffer, ext: string) {
   return `${env.API_URL}/uploads/${name}`;
 }
 
+/** Manual-payment receipts are attached to an order and returned to admins only. */
+export async function saveReceiptUpload(file: Buffer, ext: string) {
+  const receiptExt = ({ jpg: "jpg", jpeg: "jpg", png: "png", webp: "webp" } as Record<string, string>)[ext];
+  if (!receiptExt) throw badRequest("Upload a JPEG, PNG or WebP image under 10MB.", "UPLOAD_TYPE");
+  return env.CLOUDINARY_URL ? toCloudinary(file, receiptExt) : toDisk(file, receiptExt);
+}
+
 async function toCloudinary(file: Buffer, ext: string) {
   // cloudinary://API_KEY:API_SECRET@CLOUD_NAME
   const u = new URL(env.CLOUDINARY_URL!);

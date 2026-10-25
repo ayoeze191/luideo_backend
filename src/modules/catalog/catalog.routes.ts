@@ -27,11 +27,11 @@ catalogRouter.get("/meta", async (_req, res) => {
     // For suggesting a $ price from a ₦ one in the admin.
     fx: await ngnPerUsd(),
     // Only what can actually be used right now, per currency.
-    paymentMethods: PAYMENT_METHODS.map(({ id, label, hint, currencies }) => ({
+    paymentMethods: PAYMENT_METHODS.map(({ id, provider, label, hint, currencies }) => ({
       id,
       label,
       hint,
-      currencies: currencies.filter((c) => paymentCurrencies().includes(c)),
+      currencies: provider === "FLUTTERWAVE" ? currencies.filter((c) => paymentCurrencies().includes(c)) : currencies,
     })).filter((m) => m.currencies.length > 0),
   });
 });
