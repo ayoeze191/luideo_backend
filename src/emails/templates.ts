@@ -262,21 +262,21 @@ export function newOrderForStudio(
   };
 }
 
-/** Sent when a Zelle / Apple Cash / wire order is placed, so the customer can come back to pay and upload a receipt. */
+/** Sent when a Zelle / Cash App / Apple Cash / wire order is placed, so the customer can come back to pay and upload a receipt. */
 export function manualPaymentPending(order: { reference: string; name: string; email: string; totalLabel: string; orderUrl: string }): Mail {
   return {
     to: order.email,
     subject: `Order ${order.reference}: send ${order.totalLabel} to complete it — Lui'Deo`,
     html: layout(
       heading(`Thank you, ${firstName(order.name)}`) +
-        p(`Your order <b style="color:${C.ink}">${order.reference}</b> is reserved. To complete it, send <b style="color:${C.ink}">${escape(order.totalLabel)}</b> by Zelle, Apple Cash or U.S. wire, then upload a screenshot of the receipt.`) +
+        p(`Your order <b style="color:${C.ink}">${order.reference}</b> is reserved. To complete it, send <b style="color:${C.ink}">${escape(order.totalLabel)}</b> by Zelle, Cash App, Apple Cash or U.S. wire, then upload a screenshot of the receipt.`) +
         p(`The payment details are on your order page. Put <b style="color:${C.ink}">${order.reference}</b> in the payment note.`) +
         button(order.orderUrl, "Pay and upload receipt") +
         small("We start making your piece once the studio has confirmed your payment."),
       "",
       { preheader: `Send ${order.totalLabel} and upload your receipt to complete order ${order.reference}.` },
     ),
-    text: `Thank you, ${order.name}.\n\nYour order ${order.reference} is reserved. Send ${order.totalLabel} by Zelle, Apple Cash or U.S. wire, then upload the receipt. Put ${order.reference} in the payment note.\n\nPayment details and receipt upload: ${order.orderUrl}`,
+    text: `Thank you, ${order.name}.\n\nYour order ${order.reference} is reserved. Send ${order.totalLabel} by Zelle, Cash App, Apple Cash or U.S. wire, then upload the receipt. Put ${order.reference} in the payment note.\n\nPayment details and receipt upload: ${order.orderUrl}`,
   };
 }
 
@@ -289,7 +289,7 @@ export function receiptForStudio(to: string, order: { reference: string; name: s
     html: layout(
       heading("A payment receipt to check") +
         p(`<b style="color:${C.ink}">${escape(order.name)}</b> (${escape(order.email)}) has uploaded a receipt for <b style="color:${C.ink}">${escape(order.totalLabel)}</b> on order <b style="color:${C.ink}">${order.reference}</b>.`) +
-        p("Check the money has arrived in your Zelle, Apple Cash or bank account, then confirm the payment in the admin.") +
+        p("Check the money has arrived in your Zelle, Cash App, Apple Cash or bank account, then confirm the payment in the admin.") +
         button(link, "Open the order"),
       "",
       { preheader: `${order.name} uploaded a receipt for ${order.totalLabel}.` },

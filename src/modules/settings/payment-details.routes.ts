@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "../../lib/prisma.ts";
 
 /* ------------------------------------------------------------------ *
- * Where customers send manual USD payments (Zelle, Apple Cash, U.S.
+ * Where customers send manual USD payments (Zelle, Cash App, Apple Cash, U.S.
  * domestic wire). The studio edits these from the admin's "Payment
  * details" page; checkout shows them after a manual-payment order is
  * placed. A method with its fields left empty isn't shown.
@@ -14,6 +14,7 @@ const text = z.string().trim().max(200).default("");
 
 export const paymentDetailsSchema = z.object({
   zelle: z.object({ name: text, contact: text }).default({ name: "", contact: "" }),
+  cashApp: z.object({ name: text, cashtag: text }).default({ name: "", cashtag: "" }),
   appleCash: z.object({ name: text, contact: text }).default({ name: "", contact: "" }),
   wire: z
     .object({ accountName: text, bankName: text, accountNumber: text, routingNumber: text, bankAddress: text })
