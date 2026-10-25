@@ -26,9 +26,8 @@ export type ShippingMethod = {
 /* ------------------------------------------------------------------ *
  * Delivery prices, from the studio's own rate card. Within Lagos the
  * price depends on the area; the rest of Nigeria is one price; pickup is
- * free. There's no free delivery, whatever the order size. Orders
- * from outside Nigeria aren't paid online — the checkout sends them to
- * the studio's WhatsApp to arrange shipping.
+ * free. There's no free delivery, whatever the order size. U.S. delivery is
+ * a flat $40; the listed European and African countries are a flat $80.
  *
  * To change a price, change `ngn` here; `usd` follows from it (for
  * customers paying in dollars for a Nigerian address).
@@ -36,6 +35,14 @@ export type ShippingMethod = {
 
 const USD_RATE = 1500;
 const ngn = (n: number) => ({ ngn: n, usd: Math.ceil(n / USD_RATE) });
+
+const AFRICAN_COUNTRIES = [
+  "Algeria", "Angola", "Benin", "Botswana", "Burkina Faso", "Burundi", "Cabo Verde", "Cameroon", "Central African Republic", "Chad", "Comoros", "Congo", "Democratic Republic of the Congo", "Djibouti", "Egypt", "Equatorial Guinea", "Eritrea", "Eswatini", "Ethiopia", "Gabon", "Gambia", "Ghana", "Guinea", "Guinea-Bissau", "Ivory Coast", "Kenya", "Lesotho", "Liberia", "Libya", "Madagascar", "Malawi", "Mali", "Mauritania", "Mauritius", "Morocco", "Mozambique", "Namibia", "Niger", "Rwanda", "São Tomé and Príncipe", "Senegal", "Seychelles", "Sierra Leone", "Somalia", "South Africa", "South Sudan", "Sudan", "Tanzania", "Togo", "Tunisia", "Uganda", "Zambia", "Zimbabwe",
+];
+
+const EUROPEAN_COUNTRIES = [
+  "Albania", "Andorra", "Armenia", "Austria", "Azerbaijan", "Belarus", "Belgium", "Bosnia and Herzegovina", "Bulgaria", "Croatia", "Cyprus", "Czechia", "Denmark", "Estonia", "Finland", "France", "Georgia", "Germany", "Greece", "Hungary", "Iceland", "Ireland", "Italy", "Kosovo", "Latvia", "Liechtenstein", "Lithuania", "Luxembourg", "Malta", "Moldova", "Monaco", "Montenegro", "Netherlands", "North Macedonia", "Norway", "Poland", "Portugal", "Romania", "Russia", "San Marino", "Serbia", "Slovakia", "Slovenia", "Spain", "Sweden", "Switzerland", "Turkey", "Ukraine", "United Kingdom", "Vatican City",
+];
 
 const lagos = (id: string, name: string, price: number, areas: string[]): ShippingMethod => ({
   id: `lagos-${id}`,
@@ -91,6 +98,22 @@ export const SHIPPING_METHODS: ShippingMethod[] = [
     price: ngn(0),
     regions: ["Nigeria"],
     transitDays: 0,
+  },
+  {
+    id: "us-delivery",
+    name: "United States delivery",
+    detail: "Flat-rate delivery to the United States",
+    price: { ngn: 40 * USD_RATE, usd: 40 },
+    regions: ["United States"],
+    transitDays: 10,
+  },
+  {
+    id: "international-delivery",
+    name: "International delivery",
+    detail: "Flat-rate delivery to listed European and African countries",
+    price: { ngn: 80 * USD_RATE, usd: 80 },
+    regions: [...AFRICAN_COUNTRIES, ...EUROPEAN_COUNTRIES],
+    transitDays: 14,
   },
 ];
 

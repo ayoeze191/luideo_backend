@@ -54,6 +54,9 @@ export async function createOrder(input: CheckoutInput, user?: User) {
   if (!shipping.regions.includes(input.address.country)) {
     throw badRequest(`${shipping.name} doesn't deliver to ${input.address.country}.`, "SHIPPING_REGION");
   }
+  if (input.address.country !== "Nigeria" && input.currency !== "USD") {
+    throw badRequest("Orders delivered outside Nigeria are paid in US dollars.", "SHIPPING_CURRENCY");
+  }
   const inLagos = input.address.state.trim().toLowerCase() === "lagos";
   if (shipping.zone === "lagos" && !inLagos) {
     throw badRequest("That delivery price is for Lagos addresses. Choose delivery outside Lagos instead.", "SHIPPING_REGION");
