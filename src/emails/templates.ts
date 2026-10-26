@@ -280,21 +280,77 @@ export function manualPaymentPending(order: { reference: string; name: string; e
   };
 }
 
-/** Tells the studio a customer has uploaded a payment receipt to check. */
-export function receiptForStudio(to: string, order: { reference: string; name: string; email: string; totalLabel: string }): Mail {
+/**
+ * Tells the studio a customer says they've paid by Zelle / Cash App / Apple Cash / wire:
+ * everything needed to check the money and confirm, in one email.
+ */
+export function receiptForStudio(
+  to: string,
+  order: {
+    reference: string;
+    name: string;
+    email: string;
+    phone: string;
+    address: string;
+    totalLabel: string;
+    channel: string;
+    receiptUrl: string;
+    lines: { name: string; detail: string; quantity: number; photo?: string | null }[];
+  },
+): Mail {
   const link = `${env.FRONTEND_URL}/admin/orders/${encodeURIComponent(order.reference)}`;
+  const where = order.channel === "U.S. wire" ? "your bank account" : `your ${escape(order.channel)}`;
+  const rows = order.lines.map((l) => itemRow(l)).join("");
   return {
     to,
-    subject: `Receipt to check: order ${order.reference} — ${order.totalLabel} from ${order.name}`,
+    subject: `Payment to check: ${order.totalLabel} by ${order.channel} — order ${order.reference} from ${order.name}`,
     html: layout(
-      heading("A payment receipt to check") +
-        p(`<b style="color:${C.ink}">${escape(order.name)}</b> (${escape(order.email)}) has uploaded a receipt for <b style="color:${C.ink}">${escape(order.totalLabel)}</b> on order <b style="color:${C.ink}">${order.reference}</b>.`) +
-        p("Check the money has arrived in your Zelle, Cash App, Apple Cash or bank account, then confirm the payment in the admin.") +
-        button(link, "Open the order"),
+      heading("A customer says they've paid") +
+        p(`<b style="color:${C.ink}">${escape(order.name)}</b> says they sent <b style="color:${C.ink}">${escape(order.totalLabel)}</b> by <b style="color:${C.ink}">${escape(order.channel)}</b> for order <b style="color:${C.ink}">${order.reference}</b>, and uploaded this receipt:`) +
+        `<p style="margin:0 0 20px"><a href="${escape(order.receiptUrl)}"><img src="${escape(order.receiptUrl)}" alt="Payment receipt" width="320" style="display:block;max-width:100%;height:auto;border:1px solid ${C.line}"></a></p>` +
+        p(`<b>What to do</b><br>1. Check ${where} for <b style="color:${C.ink}">${escape(order.totalLabel)}</b> with <b style="color:${C.ink}">${order.reference}</b> in the note.<br>2. If it's there, open the order and press <b>Confirm payment</b>. The customer is emailed their confirmation and the order moves to the bench.<br>3. If it isn't, don't confirm. Reply to the customer at ${escape(order.email)}.`) +
+        button(link, "Open the order to confirm") +
+        divider +
+        `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 16px">${rows}</table>` +
+        p(`<b>Customer</b><br>${escape(order.name)}<br><a href="mailto:${escape(order.email)}">${escape(order.email)}</a><br>${escape(order.phone)}`) +
+        p(`<b>Deliver to</b><br>${escape(order.address)}`),
       "",
-      { preheader: `${order.name} uploaded a receipt for ${order.totalLabel}.` },
+      { preheader: `${order.name} sent ${order.totalLabel} by ${order.channel}. Check it and confirm.` },
     ),
-    text: `${order.name} (${order.email}) uploaded a receipt for ${order.totalLabel} on order ${order.reference}.\n\nCheck the money has arrived, then confirm the payment in the admin: ${link}`,
+    text: [
+      `${order.name} says they sent ${order.totalLabel} by ${order.channel} for order ${order.reference}.`,
+      `Receipt: ${order.receiptUrl}`,
+      "",
+      `1. Check ${order.channel === "U.S. wire" ? "your bank account" : `your ${order.channel}`} for ${order.totalLabel} with ${order.reference} in the note.`,
+      "2. If it's there, open the order and press Confirm payment. The customer is emailed their confirmation.",
+      `3. If it isn't, don't confirm. Reply to the customer at ${order.email}.`,
+      "",
+      `Open the order: ${link}`,
+      "",
+      ...order.lines.map((l) => `- ${l.name} × ${l.quantity} (${l.detail})`),
+      "",
+      `Customer: ${order.name}, ${order.email}, ${order.phone}`,
+      `Deliver to: ${order.address}`,
+    ].join("\n"),
+  };
+}
+
+/** Tells the customer their receipt arrived and is being checked. */
+export function receiptReceived(order: { reference: string; name: string; email: string; totalLabel: string; channel: string }): Mail {
+  const link = trackLink(order.reference);
+  return {
+    to: order.email,
+    subject: `We've got your receipt for order ${order.reference} — lui'Deo`,
+    html: layout(
+      heading(`Thank you, ${firstName(order.name)}`) +
+        p(`We've received your receipt for <b style="color:${C.ink}">${escape(order.totalLabel)}</b> by <b style="color:${C.ink}">${escape(order.channel)}</b> on order <b style="color:${C.ink}">${order.reference}</b>.`) +
+        p("The studio is checking that the payment has arrived. As soon as it's confirmed, we'll email you your order confirmation and start making your piece.") +
+        button(link, "Track your order") +
+        small("If we can't find the payment, we'll get in touch at this email address."),
+      "",
+      { preheader: `We're checking your ${order.channel} payment for order ${order.reference}.` },
+    ),
+    text: `Thank you, ${order.name}.\n\nWe've received your receipt for ${order.totalLabel} by ${order.channel} on order ${order.reference}. The studio is checking the payment; once it's confirmed we'll email your order confirmation and start making your piece.\n\nTrack your order: ${link}`,
   };
 }
 

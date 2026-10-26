@@ -229,18 +229,31 @@ export async function savePaymentReceipt(file: Buffer, ext: string) {
   return saveReceiptUpload(file, ext);
 }
 
-export async function attachPaymentReceipt(order: Order, receiptUrl: string) {
+export async function attachPaymentReceipt(order: Order & { items: OrderItem[] }, receiptUrl: string, channel: string) {
   await prisma.$transaction([
-    prisma.order.update({ where: { id: order.id }, data: { paymentReceiptUrl: receiptUrl } }),
-    prisma.orderEvent.create({ data: { orderId: order.id, label: "Payment receipt submitted" } }),
+    prisma.order.update({ where: { id: order.id }, data: { paymentReceiptUrl: receiptUrl, manualPaymentMethod: channel } }),
+    prisma.orderEvent.create({ data: { orderId: order.id, label: `Payment receipt submitted (${channel})` } }),
   ]);
+  const totalLabel = formatPrice(order.currency === "NGN" ? order.totalKobo : order.totalCents, order.currency);
+  sendMailInBackground(emails.receiptReceived({ reference: order.reference, name: order.name, email: order.email, totalLabel, channel }));
   if (env.STUDIO_EMAIL) {
+    const a = order.address as { line1: string; city: string; state: string; country: string; postcode?: string };
     sendMailInBackground(
       emails.receiptForStudio(env.STUDIO_EMAIL, {
         reference: order.reference,
         name: order.name,
         email: order.email,
-        totalLabel: formatPrice(order.currency === "NGN" ? order.totalKobo : order.totalCents, order.currency),
+        phone: order.phone,
+        address: [a.line1, a.city, a.state, a.postcode, a.country].filter(Boolean).join(", "),
+        totalLabel,
+        channel,
+        receiptUrl,
+        lines: order.items.map((i) => ({
+          name: i.name,
+          detail: [i.finishLabel, i.sizeLabel].filter(Boolean).join(" · "),
+          quantity: i.quantity,
+          photo: i.photo,
+        })),
       }),
     );
   }

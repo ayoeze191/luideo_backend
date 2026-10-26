@@ -94,6 +94,8 @@ export function serializeOrder(o: FullOrder, { internal = false } = {}) {
     paymentMethod:
       PAYMENT_METHODS.find((m) => m.provider === o.paymentProvider)?.label ?? ({ COD: "Pay on delivery", PAYSTACK: "Paystack" }[o.paymentProvider as string] ?? o.paymentProvider),
     receiptSubmitted: Boolean(o.paymentReceiptUrl),
+    /** Manual payments: "Zelle", "Cash App", "Apple Cash" or "U.S. wire", once the receipt is in. */
+    paymentChannel: o.manualPaymentMethod ?? undefined,
     ...(internal && o.paymentReceiptUrl ? { paymentReceiptUrl: o.paymentReceiptUrl } : {}),
     channel: o.channel,
     currency: o.currency,

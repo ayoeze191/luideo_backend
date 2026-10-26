@@ -222,6 +222,8 @@ model Order {
   providerRef     String?
   /// Proof supplied for a MANUAL_US payment. This is only returned to admins.
   paymentReceiptUrl String?
+  /// Manual payments: which one the customer says they used ("Zelle", "Cash App", "Apple Cash", "U.S. wire").
+  manualPaymentMethod String?
   channel         String          @default("Website")
   subtotalKobo    Int
   subtotalCents   Int

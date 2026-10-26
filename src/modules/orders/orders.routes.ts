@@ -1,7 +1,7 @@
 import express, { Router } from "express";
 import rateLimit from "express-rate-limit";
 import { z } from "zod";
-import { PAYMENT_METHODS } from "../../lib/catalog.ts";
+import { MANUAL_PAYMENT_CHANNELS, PAYMENT_METHODS } from "../../lib/catalog.ts";
 import { badRequest, notFound } from "../../lib/http-error.ts";
 import { serializeOrder } from "../../lib/serialize.ts";
 import * as orders from "./orders.service.ts";
@@ -95,13 +95,15 @@ ordersRouter.post(
     if (!order) throw notFound("We couldn't find that order.");
     if (order.paymentProvider !== "MANUAL_US") throw notFound();
     if (order.paymentStatus !== "AWAITING") throw notFound("This order no longer needs a payment receipt.");
+    const channel = MANUAL_PAYMENT_CHANNELS.find((c) => c === req.get("x-payment-method"));
+    if (!channel) throw badRequest("Choose how you paid: Zelle, Cash App, Apple Cash or U.S. wire.", "PAYMENT_METHOD");
     const contentType = req.get("content-type")?.split(";", 1)[0] ?? "";
     const ext = ({ "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" } as Record<string, string>)[contentType];
     if (!ext || !Buffer.isBuffer(req.body) || req.body.length === 0) {
       throw badRequest("Upload a JPEG, PNG or WebP image under 10MB.", "UPLOAD_TYPE");
     }
     const receiptUrl = await orders.savePaymentReceipt(req.body, ext);
-    await orders.attachPaymentReceipt(order, receiptUrl);
+    await orders.attachPaymentReceipt(order, receiptUrl, channel);
     res.status(201).json({ receiptSubmitted: true });
   },
 );

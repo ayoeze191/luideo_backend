@@ -133,6 +133,9 @@ export const PAYMENT_METHODS = [
   { id: "manual-us", provider: "MANUAL_US", label: "Pay by Zelle, Cash App, Apple Cash or wire", hint: "USD only — send payment, then upload your receipt for review", currencies: ["USD"] },
 ] as const satisfies readonly { id: string; provider: string; label: string; hint: string; currencies: readonly Currency[] }[];
 
+/** The ways a manual (MANUAL_US) payment can be sent; the customer picks one with their receipt. */
+export const MANUAL_PAYMENT_CHANNELS = ["Zelle", "Cash App", "Apple Cash", "U.S. wire"] as const;
+
 export type PaymentMethodId = (typeof PAYMENT_METHODS)[number]["id"];
 
 /** Order status as the frontend spells it. */
