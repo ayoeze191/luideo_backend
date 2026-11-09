@@ -21,8 +21,16 @@ const FOLDER = "luideo/";
 const SWEEP_MIN_AGE_DAYS = 7;
 const SWEEP_EVERY_MS = 24 * 60 * 60 * 1000;
 
+/*
+ * OFF by default (PHOTO_CLEANUP=on to enable). In November 2026 every product
+ * photo on the live site was deleted from Cloudinary by this code — most likely
+ * a second copy of the backend (another database) sharing the same Cloudinary
+ * account, which saw none of the live photos as "in use". Deletion stays off
+ * unless someone deliberately turns it on, and the sweep refuses to run if it
+ * would remove a large share of the folder.
+ */
 function config() {
-  if (!env.CLOUDINARY_URL) return null;
+  if (!env.CLOUDINARY_URL || env.PHOTO_CLEANUP !== "on") return null;
   const u = new URL(env.CLOUDINARY_URL);
   return { apiKey: decodeURIComponent(u.username), apiSecret: decodeURIComponent(u.password), cloud: u.hostname };
 }
@@ -112,6 +120,8 @@ async function sweep() {
   const used = await inUse();
   let cursor: string | undefined;
   let removed = 0;
+  let total = 0;
+  const doomed: string[] = [];
   do {
     const q = new URLSearchParams({ prefix: FOLDER, max_results: "500", ...(cursor && { next_cursor: cursor }) });
     const res = await fetch(`https://api.cloudinary.com/v1_1/${cfg.cloud}/resources/image/upload?${q}`, { headers: { Authorization: auth } });
@@ -120,10 +130,20 @@ async function sweep() {
     for (const r of page.resources) {
       if (!r.public_id.startsWith(FOLDER) || used.has(r.public_id)) continue;
       if (new Date(r.created_at).getTime() > cutoff) continue;
-      await destroy(r.public_id).then(() => removed++).catch((err) => console.warn("Photo sweep:", (err as Error).message));
+      doomed.push(r.public_id);
     }
+    total += page.resources.length;
     cursor = page.next_cursor;
   } while (cursor);
+  // Safety net: if most of the folder looks unused, something is wrong (wrong database,
+  // wrong cloud) — delete nothing and say so.
+  if (doomed.length > 10 && doomed.length > total * 0.2) {
+    console.error(`Photo sweep: refusing to delete ${doomed.length} of ${total} photos — that looks like a mistake, not clutter.`);
+    return;
+  }
+  for (const id of doomed) {
+    await destroy(id).then(() => removed++).catch((err) => console.warn("Photo sweep:", (err as Error).message));
+  }
   if (removed) console.log(`Photo sweep: removed ${removed} unused photo(s) from Cloudinary.`);
 }
 

@@ -48,6 +48,10 @@ const schema = z.object({
 
   CLOUDINARY_URL: optional,
 
+  /** "on" lets the site delete its own unused photos from Cloudinary. Off unless set: deleting is never automatic by default. */
+
+  PHOTO_CLEANUP: z.enum(["on", "off"]).default("off"),
+
   /** Fallback ₦ per $ for suggesting dollar prices, used only if the live rate can't be fetched. */
   NGN_PER_USD: z.coerce.number().positive().default(1500),
 });
